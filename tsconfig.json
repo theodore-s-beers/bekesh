@@ -2,14 +2,19 @@
   "compilerOptions": {
     "declaration": true,
     "exactOptionalPropertyTypes": true,
+    "isolatedDeclarations": true,
+    "isolatedModules": true,
     "lib": ["DOM", "ES2022", "ES2022.Intl"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
+    "noEmitOnError": true,
     "noUncheckedIndexedAccess": true,
+    "noUncheckedSideEffectImports": true,
     "outDir": "dist",
     "rootDir": "src",
     "strict": true,
     "target": "ES2022",
+    "types": [],
     "verbatimModuleSyntax": true
   },
   "include": ["src/**/*.ts"]

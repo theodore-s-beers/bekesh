@@ -67,13 +67,26 @@ width, per-space `wordSpacing`, inserted tatweel edits, and diagnostic strings.
 If the clean source already exceeds the target, Bekesh returns it unchanged
 with the `source-overflows-target` diagnostic.
 
+`diagnostics` contains values from the exported `JustificationDiagnostic` type:
+
+- `source-overflows-target`: the clean source is already too wide and is
+  returned unchanged.
+- `no-adjustable-spaces`: residual width remains, but the source contains no
+  U+0020 spaces to which word spacing can be applied.
+- `iteration-safety-limit-reached`: the pure solver reached its bounded
+  iteration limit.
+- `dom-verification-adjusted`: DOM verification reduced the Canvas-selected
+  tatweels or word spacing.
+- `dom-verification-fallback`: bounded DOM refitting could not find a verified
+  edited result, so the fitting step fell back to clean source text.
+
 The package also exports:
 
 - `fitWithKashida()` for deterministic use with an injected text measurer.
 - `findPersianNaskhCandidates()` and `persianNaskhCandidateEngine`.
 - `canvasTextMeasurer`.
 - TypeScript types for options, results, candidates, edits, engines, and
-  measurers.
+  measurers, including `JustificationDiagnostic`.
 
 ## Browser and layout requirements
 
@@ -95,14 +108,18 @@ should be visually reviewed with the fonts and texts an application supports.
 
 The repository also maintains the research that informed the implementation:
 
-- [Research synthesis](docs/research-synthesis.md) — the original survey and
-  proposed architecture
-- [Prior-art catalog](docs/catalog.md) — a map of projects and standards
-- [Implementation comparison](docs/comparison.md) — responsibilities and
-  tradeoffs side by side
-- [Source notes](docs/sources/README.md) — notes tied to specific revisions
-- [Regression corpus](corpus/README.md) and
-  [`cases.json`](corpus/cases.json) — test categories and starter cases
+- [Research synthesis](https://github.com/theodore-s-beers/bekesh/blob/main/docs/research-synthesis.md)
+  — the original survey and proposed architecture
+- [Prior-art catalog](https://github.com/theodore-s-beers/bekesh/blob/main/docs/catalog.md)
+  — a map of projects and standards
+- [Implementation comparison](https://github.com/theodore-s-beers/bekesh/blob/main/docs/comparison.md)
+  — responsibilities and tradeoffs side by side
+- [Source notes](https://github.com/theodore-s-beers/bekesh/blob/main/docs/sources/README.md)
+  — notes tied to specific revisions
+- [Regression corpus](https://github.com/theodore-s-beers/bekesh/blob/main/corpus/README.md)
+  and
+  [`cases.json`](https://github.com/theodore-s-beers/bekesh/blob/main/corpus/cases.json)
+  — test categories and starter cases
 
 Research notes prefer primary sources and pin code observations to revisions
 where possible. U+0640 output is treated as a reversible presentation artifact,
@@ -127,6 +144,9 @@ One way to provide the system browser tooling is:
 volta install playwright
 playwright install chromium firefox
 ```
+
+If Playwright is installed elsewhere, set `BEKESH_PLAYWRIGHT_PATH` to its
+package directory.
 
 ## License
 

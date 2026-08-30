@@ -34,8 +34,8 @@ const fontSizes = [16, 16.1, 20, 22.3, 29.1];
 
 function loadSystemPlaywright() {
   const candidates = [];
-  if (process.env.KASHIDA_PLAYWRIGHT_PATH) {
-    candidates.push(process.env.KASHIDA_PLAYWRIGHT_PATH);
+  if (process.env.BEKESH_PLAYWRIGHT_PATH) {
+    candidates.push(process.env.BEKESH_PLAYWRIGHT_PATH);
   }
 
   try {
@@ -67,7 +67,7 @@ function loadSystemPlaywright() {
   }
 
   throw new Error(
-    "System Playwright was not found. Run `volta install playwright` or set KASHIDA_PLAYWRIGHT_PATH.",
+    "System Playwright was not found. Run `volta install playwright` or set BEKESH_PLAYWRIGHT_PATH.",
   );
 }
 

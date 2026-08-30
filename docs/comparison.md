@@ -1,7 +1,8 @@
 # Implementation comparison
 
-No one reviewed system supplies the whole desired pipeline. The useful design
-is a composition of their strongest boundaries.
+No reviewed system supplies the whole pipeline. Bekesh's browser-first
+implementation composes a subset of these ideas; the shaping-aware components
+below remain possible future work.
 
 | Source               | Candidate quality      | Shaping-aware | Measures actual run                                                  | Fits target width | Style-specific | TypeScript-ready |
 | -------------------- | ---------------------- | ------------- | -------------------------------------------------------------------- | ----------------- | -------------- | ---------------- |
@@ -38,11 +39,11 @@ actual run.
 
 Qt demonstrates a practical greedy policy: retain one preferred Arabic point
 per word, visit priorities from high to low, add extenders while they fit, then
-fall back to spacing. A TypeScript MVP can follow that shape while reshaping
-after edits. A bounded beam search can later compare distributions that have
-similar width error but different visual penalties.
+fall back to spacing. Bekesh's initial solver broadly follows that shape while
+measuring after edits. A bounded beam search could later compare distributions
+that have similar width error but different visual penalties.
 
-## Proposed pipeline
+## Possible shaping-aware pipeline
 
 ```text
 clean source run
@@ -55,7 +56,7 @@ clean source run
     -> return display text, residual, diagnostics, and reversible edits
 ```
 
-## Experiments needed before implementation
+## Future shaping-backend experiments
 
 1. Verify the meaning and location of HarfBuzz's safe flag in an RTL glyph
    stream, especially around combining marks and ligatures.

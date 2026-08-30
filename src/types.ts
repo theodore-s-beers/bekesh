@@ -23,6 +23,13 @@ export interface TatweelEdit extends TatweelCandidate {
   count: number;
 }
 
+export type JustificationDiagnostic =
+  | "dom-verification-adjusted"
+  | "dom-verification-fallback"
+  | "iteration-safety-limit-reached"
+  | "no-adjustable-spaces"
+  | "source-overflows-target";
+
 export interface JustificationResult {
   sourceText: string;
   displayText: string;
@@ -36,7 +43,7 @@ export interface JustificationResult {
   /** Additional CSS word-spacing per U+0020 space. */
   wordSpacing: number;
   edits: readonly TatweelEdit[];
-  diagnostics: readonly string[];
+  diagnostics: readonly JustificationDiagnostic[];
 }
 
 export interface CandidateEngine {

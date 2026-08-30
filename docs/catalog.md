@@ -62,9 +62,9 @@ in HarfBuzz 5.1.0.
   glyph flags, clusters, advances, font variations, and shaping are exported in
   the reviewed snapshot
 
-This is the leading shaping backend for a TypeScript MVP. An integration spike
-still needs to prove cluster-to-source mapping and the exact flag behavior with
-representative fonts.
+This is the leading candidate for a future shaping-aware backend. An
+integration spike would need to prove cluster-to-source mapping and the exact
+flag behavior with representative fonts.
 
 ## Width allocation
 
@@ -80,8 +80,8 @@ representative fonts.
   widths, repeated priority passes, and spacing fallback
 - Detailed note: [Qt text engine](sources/qt.md)
 
-Treat Qt as algorithmic reference unless the eventual project's licensing and
-reuse strategy are reviewed separately.
+Treat Qt as algorithmic reference unless Bekesh's licensing and reuse strategy
+are reviewed separately.
 
 ### Nagwa kashida-engine
 
@@ -119,8 +119,9 @@ font behavior, and a combination of elongation and spacing matter.
 - Contribution: `jalt` substitution and JSTF's prioritized GSUB, GPOS, and
   extender-glyph model
 
-These are beyond a U+0640 MVP but suggest an internal abstraction based on
-ranked shaping actions rather than hard-coding “insert one character.”
+These are beyond Bekesh's initial U+0640 implementation but suggest an internal
+abstraction based on ranked shaping actions rather than hard-coding “insert
+one character.”
 
 ## Failure reports and visual evidence
 

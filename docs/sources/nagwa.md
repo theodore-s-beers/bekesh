@@ -28,10 +28,10 @@ For each shorter string, it:
 
 The output is not remeasured in a feedback loop.
 
-## Use for our design
+## Lessons for Bekesh
 
 The library is the closest prior TypeScript API and is a useful control
-implementation. It also isolates the limitations our design should test:
+implementation. It also isolates limitations that Bekesh should test:
 
 - an isolated tatweel width may not equal contextual shaped gain;
 - regex character lists age poorly and do not model joining behavior;

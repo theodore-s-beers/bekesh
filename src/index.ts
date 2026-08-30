@@ -3,6 +3,7 @@ export { canvasTextMeasurer, justifyWithKashida } from "./browser.js";
 export { fitWithKashida } from "./solver.js";
 export type {
   CandidateEngine,
+  JustificationDiagnostic,
   JustificationResult,
   JustifyOptions,
   TatweelCandidate,

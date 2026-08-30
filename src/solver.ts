@@ -1,6 +1,7 @@
 import { persianNaskhCandidateEngine } from "./candidates.js";
 import type {
   CandidateEngine,
+  JustificationDiagnostic,
   JustificationResult,
   JustifyOptions,
   TatweelCandidate,
@@ -91,7 +92,7 @@ export function fitWithKashida(
     throw new RangeError("The text measurer returned an invalid width");
   }
 
-  const diagnostics: string[] = [];
+  const diagnostics: JustificationDiagnostic[] = [];
   const edits = new Map<number, MutableEdit>();
   let displayText = options.text;
   let measuredWidth = sourceWidth;

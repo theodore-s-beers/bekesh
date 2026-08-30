@@ -39,14 +39,14 @@ The example justifier is deliberately monospaced. It keeps the highest-ranked
 point in each word, makes passes from higher to lower priority, and caps repeats
 at a point. This is an illustrative consumer, not part of candidate discovery.
 
-## Use for our design
+## Lessons for Bekesh
 
-Model the TypeScript candidate interface on Raqim's narrow responsibility and
-cluster-based output. Preserve rule IDs in our result even though Raqim's
-public point currently contains only index and priority; provenance will make
-diagnostics and rule-set comparison easier.
+Raqim's narrow responsibility and cluster-based output are useful models for a
+future candidate engine. Bekesh already preserves rule IDs in its results even
+though Raqim's public point currently contains only index and priority;
+provenance makes diagnostics and rule-set comparison easier.
 
-Two implementation paths remain open:
+Two future integration paths remain open:
 
 - compile the Rust crate to WASM; or
 - port the pattern compiler and matcher, validating it against upstream tests.

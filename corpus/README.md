@@ -1,9 +1,11 @@
 # Regression corpus
 
-[`cases.json`](cases.json) is a starter corpus for candidate generation,
-indexing, shaping-safety, and solver tests. It intentionally does not prescribe
-the exact insertion point for every case: that answer can vary by style rule
-set and font.
+[`cases.json`](cases.json) is a research fixture inventory for candidate
+generation, indexing, shaping-safety, and solver tests. It is not currently
+loaded by the automated test suite; selected cases are independently encoded
+in `test/candidates.test.mjs`. It intentionally does not prescribe the exact
+insertion point for every case: that answer can vary by style rule set and
+font.
 
 The corpus stores clean source strings and invariants. Expected display text
 belongs in backend- and font-specific snapshots later.

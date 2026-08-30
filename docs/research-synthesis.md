@@ -7,7 +7,7 @@
 
 ## Main conclusion
 
-Yes. The project is quite viable, provided the first version is described precisely as **font-aware insertion of U+0640 ARABIC TATWEEL to approximate kashida justification**, rather than as a complete implementation of calligraphic kashida.
+The project is viable because its initial scope is described precisely as **font-aware insertion of U+0640 ARABIC TATWEEL to approximate kashida justification**, rather than as a complete implementation of calligraphic kashida.
 
 That distinction matters. A true kashida can involve reconfiguring a connection, selecting contextual or alternate glyphs, or continuously elongating part of a glyph. A literal U+0640 is an ordinary character whose behavior depends on the font and shaping engine. W3C’s Arabic Layout Requirements describes TATWEEL insertion as the simpler but more limited implementation strategy, and recommends combining elongation with other justification mechanisms in sophisticated systems. ([W3C][1])
 
@@ -30,7 +30,7 @@ Its particularly useful ideas are:
 
 The accompanying article explicitly notes that different calligraphic styles permit very different elongations: Ruqʿah may permit none, while Diwani and other styles impose their own restrictions. It also criticizes the single generic rule set inherited by several older layout implementations as adequate mainly for simple Arabic fonts. ([حروف ألف][2])
 
-For your project, I would either:
+Two reuse paths were considered:
 
 1. compile the Rust library to WebAssembly and wrap it in TypeScript, or
 2. port its relatively compact pattern compiler and matcher into TypeScript.
@@ -61,7 +61,7 @@ candidates for the width solver
 
 The relevant HarfBuzz buffer option is `HB_BUFFER_FLAG_PRODUCE_SAFE_TO_INSERT_TATWEEL`, introduced in HarfBuzz 5.1.0 and disabled by default. ([HarfBuzz Manual][4])
 
-`harfbuzzjs` now has a TypeScript/ESM API and exposes buffer and glyph information, making it the most natural shaping backend for a browser-and-Node TypeScript package. Its supplied WASM build is intentionally a reduced HarfBuzz build, so you would want to verify that the exact flags and functions you need are exported, or build a slightly fuller WASM artifact. The project is MIT-licensed. ([GitHub][5])
+`harfbuzzjs` now has a TypeScript/ESM API and exposes buffer and glyph information, making it the most natural shaping backend for a browser-and-Node TypeScript package. Its supplied WASM build is intentionally a reduced HarfBuzz build, so a future integration would need to verify that the required flags and functions are exported, or build a slightly fuller WASM artifact. The project is MIT-licensed. ([GitHub][5])
 
 ### 3. Qt’s `QTextEngine`: the best production allocation algorithm to study
 
@@ -76,9 +76,9 @@ The Qt implementation:
 - works through successively lower priority levels;
 - falls back to spacing when elongation alone does not supply the required width.
 
-This is close to the allocation half of your proposed library. In broad terms, `raqim-kashida` supplies a much better modern candidate model, while Qt supplies an excellent model of how candidates can be allocated against a measured horizontal deficit. ([GitHub][6])
+This is close to the allocation half of Bekesh. In broad terms, `raqim-kashida` supplies a strong modern candidate model, while Qt supplies an excellent model of how candidates can be allocated against a measured horizontal deficit. ([GitHub][6])
 
-Qt’s source is available under its commercial and LGPL/GPL licensing arrangements, so I would treat it primarily as an algorithmic reference unless your own package’s licensing is compatible. ([GitHub][6])
+Qt’s source is available under its commercial and LGPL/GPL licensing arrangements, so it is treated primarily as an algorithmic reference unless a compatible reuse strategy is established. ([GitHub][6])
 
 ### 4. `aliftype/kashida-js` and old HarfBuzz: the classic heuristic baseline
 
@@ -96,7 +96,7 @@ The classic priority sequence favors, approximately:
 
 The implementation normally selects the highest-priority opportunity in each word and, for ties, prefers a point closer to the end of the word. It also contains explicit protection against lām–alif behavior. ([GitHub][7])
 
-This is worth retaining in your repository as:
+This is worth retaining in the research archive as:
 
 - a very readable control implementation;
 - a fallback “simple Arabic” rule set;
@@ -106,7 +106,7 @@ This is worth retaining in your repository as:
 
 ### 5. Nagwa’s `kashida-engine`: the closest existing TypeScript API
 
-The repository `Nagwa-Limited-Community/kashida-engine` may be the closest literal predecessor to what you described. It is written in TypeScript, uses Canvas `measureText()`, and exposes functions for making strings attain common measured widths in a given font.
+The repository `Nagwa-Limited-Community/kashida-engine` may be the closest literal predecessor to Bekesh. It is written in TypeScript, uses Canvas `measureText()`, and exposes functions for making strings attain common measured widths in a given font.
 
 Its basic procedure is:
 
@@ -122,12 +122,12 @@ It then distributes those tatweels among regex-selected Arabic positions, with s
 
 This is useful prior art in two ways:
 
-- Its outward-facing TypeScript API resembles the one you might build.
-- Its limitations show exactly what your implementation can improve.
+- Its outward-facing TypeScript API resembles Bekesh's.
+- Its limitations show exactly what Bekesh can improve.
 
 In particular, an isolated tatweel’s width cannot safely be assumed to be an additive constant at every connection. Contextual substitution, ligatures, alternate forms, and the font’s treatment of repeated U+0640 can alter the resulting shaped width. Nor can a broad Arabic-character regex determine whether a connection is typographically suitable. Your solver should therefore insert, reshape, and remeasure rather than estimating the answer through division alone.
 
-I did not find a clearly surfaced license declaration for this repository, so I would verify that before copying code.
+A clearly surfaced license declaration was not found for this repository, so its status would need verification before copying code.
 
 ### 6. W3C ALReq and OpenType `jalt`/JSTF: the design horizon
 
@@ -138,11 +138,11 @@ Two OpenType mechanisms describe what a more advanced future version could do:
 - The `jalt` feature supplies wider or narrower glyph alternatives intended for justification. For Arabic, these can reduce reliance on literal tatweels.
 - The JSTF table describes prioritized justification actions, including GSUB substitutions, GPOS adjustments, and extender glyphs such as kashidas.
 
-JSTF’s model is especially instructive: it treats justification as a series of ranked shaping actions and expects the client to reshape after applying them. Even where practical engine support is limited, that is a sound conceptual design for your internal solver. ([Microsoft Learn][10])
+JSTF’s model is especially instructive: it treats justification as a series of ranked shaping actions and expects the client to reshape after applying them. Even where practical engine support is limited, that is a sound conceptual design for an advanced internal solver. ([Microsoft Learn][10])
 
 ### 7. Academic and experimental systems
 
-I would include three items in a “beyond the MVP” section of the repository bibliography:
+Three items belong in a “beyond the MVP” section of the repository bibliography:
 
 **Benatia, Elyaakoubi, and Lazrek, “Arabic Text Justification,” TUGboat 27.2 (2006).** This is a frequently cited account of Arabic justification grounded in traditional typographic and calligraphic processes. ([Semantic Scholar][11])
 
@@ -150,7 +150,7 @@ I would include three items in a “beyond the MVP” section of the repository 
 
 **Amine Anane’s DigitalKhatt work.** DigitalKhatt explores Arabic justification using dynamic or variable font forms, contextual alternates, and a modified HarfBuzz/OpenType pipeline. Its TypeScript web platform and HarfBuzz fork are open source. This is the advanced end of the spectrum: rather than inserting fixed-width characters, the system can manipulate glyph forms and elongation continuously. ([Semantic Scholar][13])
 
-### 8. Babel and TypoArabic: your initial regression corpus
+### 8. Babel and TypoArabic: initial regression leads
 
 The Babel Arabic-justification issue tracker contains concrete failure cases that are more valuable than generic unit strings. Reported problems include:
 
@@ -162,7 +162,7 @@ The Babel Arabic-justification issue tracker contains concrete failure cases tha
 
 TypoArabic’s survey adds visual examples showing why baseline-length rectangles or hard-coded tatweel glyphs fail in fonts whose joins curve, descend, or employ contextual alternates. ([GitHub][14])
 
-I would turn these directly into test fixtures.
+These reports can become independently written test fixtures.
 
 ## A possible advanced architecture
 
@@ -249,7 +249,7 @@ interface JustificationResult {
 }
 ```
 
-I would call the public operation something like `justifyWithTatweel()` or `fitWithKashida()`, but use `TatweelEdit` internally so that the implementation does not blur the distinction between calligraphic elongation and literal U+0640 insertion.
+The operation was tentatively named `justifyWithTatweel()` or `fitWithKashida()`. The implemented API uses `justifyWithKashida()` and `fitWithKashida()`, while `TatweelEdit` preserves the distinction between calligraphic elongation and literal U+0640 insertion.
 
 ## The fitting procedure
 
@@ -292,7 +292,7 @@ Finally, treat the justified string as a **presentation artifact**, not canonica
 
 ## Suggested test matrix
 
-The first regression suite should cover:
+A broader regression suite should cover:
 
 - fully vocalized Arabic with multiple combining marks;
 - existing U+0640 characters;

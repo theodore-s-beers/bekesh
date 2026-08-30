@@ -1,6 +1,7 @@
 import { fitWithKashida } from "./solver.js";
 import type {
   CandidateEngine,
+  JustificationDiagnostic,
   JustificationResult,
   JustifyOptions,
   TextMeasurer,
@@ -67,7 +68,9 @@ function measureDomText(text: string, font: string, wordSpacing: number): number
   return element.getBoundingClientRect().width;
 }
 
-function uniqueDiagnostics(diagnostics: readonly string[]): string[] {
+function uniqueDiagnostics(
+  diagnostics: readonly JustificationDiagnostic[],
+): JustificationDiagnostic[] {
   return [...new Set(diagnostics)];
 }
 
@@ -105,7 +108,7 @@ function browserResult(
     spacingAdjusted = true;
   }
 
-  const diagnostics = result.diagnostics.filter(
+  const diagnostics: JustificationDiagnostic[] = result.diagnostics.filter(
     (diagnostic) =>
       diagnostic !== "source-overflows-target" && diagnostic !== "no-adjustable-spaces",
   );

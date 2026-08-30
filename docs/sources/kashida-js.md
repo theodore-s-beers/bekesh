@@ -33,7 +33,7 @@ By default only the best candidate in each whitespace-delimited word is used.
   in the reviewed revision.
 - Candidate selection does not inspect shaping results or fonts.
 
-## Use for our design
+## Lessons for Bekesh
 
 Retain an independently implemented equivalent as a transparent baseline. It
 is valuable for comparisons, compatibility, and explaining why a

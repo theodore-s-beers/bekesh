@@ -31,7 +31,7 @@ remainder as spacing.
 This is allocation in glyph layout, not Unicode source rewriting: the glyph's
 justification record stores a kashida count and added space.
 
-## Use for our design
+## Lessons for Bekesh
 
 Adopt the broad greedy structure for an MVP:
 
@@ -40,7 +40,7 @@ Adopt the broad greedy structure for an MVP:
 - impose explicit repeat limits; and
 - expose spacing fallback separately.
 
-Do not carry over the assumption that a cached U+0640 glyph advance is the
-complete contextual gain of editing a Unicode run. Our string-producing API
-should insert, reshape, and measure each state because contextual substitution
-can change more than the extender glyph itself.
+The implementation does not carry over the assumption that a cached U+0640
+glyph advance is the complete contextual gain of editing a Unicode run.
+Bekesh's string-producing API inserts and measures each state because
+contextual substitution can change more than the extender glyph itself.

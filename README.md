@@ -1,4 +1,4 @@
-# Kashida prior art
+# Bekesh
 
 This repository is a working library of prior art for a future TypeScript
 implementation of Arabic-script justification by kashida (elongation), with an
@@ -29,7 +29,7 @@ result against browser DOM layout, inserts U+0640 without exceeding the
 requested width, and returns CSS word spacing for the residual:
 
 ```ts
-import { justifyWithKashida } from "kashida";
+import { justifyWithKashida } from "bekesh";
 
 const result = await justifyWithKashida({
   text: "توانا بود هر که دانا بود",

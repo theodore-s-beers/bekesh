@@ -72,7 +72,7 @@ function loadSystemPlaywright() {
 }
 
 async function fontFixture() {
-  const directory = path.join(tmpdir(), "kashida-browser-tests");
+  const directory = path.join(tmpdir(), "bekesh-browser-tests");
   const filename = path.join(directory, "ScheherazadeNew-Regular.ttf");
   await mkdir(directory, { recursive: true });
 

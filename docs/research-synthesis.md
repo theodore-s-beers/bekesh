@@ -1,10 +1,17 @@
+# Research synthesis
+
+> This document predates Bekesh's initial implementation. It records the prior
+> art and architectural options considered during design; some proposed
+> interfaces and backend choices differ from the current browser-first API. See
+> the [README](../README.md) for current behavior and usage.
+
 ## Main conclusion
 
 Yes. The project is quite viable, provided the first version is described precisely as **font-aware insertion of U+0640 ARABIC TATWEEL to approximate kashida justification**, rather than as a complete implementation of calligraphic kashida.
 
 That distinction matters. A true kashida can involve reconfiguring a connection, selecting contextual or alternate glyphs, or continuously elongating part of a glyph. A literal U+0640 is an ordinary character whose behavior depends on the font and shaping engine. W3C’s Arabic Layout Requirements describes TATWEEL insertion as the simpler but more limited implementation strategy, and recommends combining elongation with other justification mechanisms in sophisticated systems. ([W3C][1])
 
-The especially fortunate discovery is that **a very closely related project appeared on August 20, 2026**, only eight days ago: Khaled Hosny’s `raqim-kashida`. It solves the orthographic and aesthetic-candidate half of your problem while deliberately leaving font shaping, width measurement, and space allocation to the caller. That is almost exactly the architectural boundary I would recommend for your TypeScript library. ([حروف ألف][2])
+The especially fortunate discovery was that **a very closely related project appeared on August 20, 2026**: Khaled Hosny’s `raqim-kashida`. It solves the orthographic and aesthetic-candidate half of the problem while deliberately leaving font shaping, width measurement, and space allocation to the caller. That is close to the architectural boundary adopted for Bekesh. ([حروف ألف][2])
 
 ## The most useful prior art
 
@@ -157,7 +164,12 @@ TypoArabic’s survey adds visual examples showing why baseline-length rectangle
 
 I would turn these directly into test fixtures.
 
-## A suitable architecture for the TypeScript library
+## A possible advanced architecture
+
+Bekesh's initial implementation separates candidate selection, width solving,
+and browser measurement, but uses a CSS font shorthand with Canvas and DOM
+measurement. The interfaces below record a possible shaping-aware direction,
+not the current public API.
 
 The most important design decision is to separate three concerns:
 
@@ -270,15 +282,15 @@ score =
 
 The penalties make a difference because several strings can be equally close to the target width while looking very different.
 
-## Important scope decisions
+## Scope decisions considered
 
-For the first release, I would explicitly support **one already resolved Arabic-script RTL run**, not arbitrary paragraphs containing mixed bidi text, fallback fonts, and line breaking. Paragraph layout introduces a second optimization problem: choosing line breaks and elongation together.
+The initial release supports **one already resolved Arabic-script RTL run**, not arbitrary paragraphs containing mixed bidi text, fallback fonts, and line breaking. Paragraph layout introduces a second optimization problem: choosing line breaks and elongation together.
 
-I would also require actual font bytes rather than accepting only a CSS family name. Font bytes make shaping reproducible in Node and the browser and let you account for OpenType features and variable-font axes. A Canvas adapter can still be offered as a lightweight browser backend, but it will not expose shaping clusters or HarfBuzz safety flags.
+The implemented browser-first API accepts a CSS font shorthand and delegates shaping to the browser. Requiring actual font bytes remains a possible advanced backend: it would make shaping reproducible in Node and the browser and allow explicit handling of OpenType features, variable-font axes, shaping clusters, and HarfBuzz safety flags.
 
 Finally, treat the justified string as a **presentation artifact**, not canonical text. Literal tatweels can affect search, comparison, copying, indexing, and text processing. Preserve the clean source and return the inserted tatweels as a reversible edit list. ([University of Reading Research][15])
 
-## Initial test matrix
+## Suggested test matrix
 
 The first regression suite should cover:
 
@@ -295,13 +307,13 @@ The first regression suite should cover:
 
 The Babel failures and Raqim pattern tests provide a useful seed corpus for most of these categories. ([GitHub][3])
 
-## Recommended starting stack
+## Possible advanced stack
 
-The strongest practical combination is:
+The strongest practical combination for a future shaping-aware backend would be:
 
 **Raqim patterns for candidate ranking → HarfBuzz WASM for shaping and safety → a Qt-inspired width allocator → Babel and TypoArabic cases for regression testing.**
 
-Nagwa’s TypeScript library gives you a useful model of the desired outer API, while `kashida-js` gives you a compact baseline against which to demonstrate why style-specific rules and repeated reshaping produce better results. This lets the project begin as a manageable U+0640 fitting library without closing off later support for `jalt`, variable-font elongation, or JSTF-like multi-stage justification.
+Nagwa’s TypeScript library provided a useful model of the desired outer API, while `kashida-js` provided a compact baseline against which to demonstrate why style-specific rules and repeated reshaping produce better results. Bekesh began with a lighter browser-native measurement architecture, without closing off later support for HarfBuzz, `jalt`, variable-font elongation, or JSTF-like multi-stage justification.
 
 [1]: https://www.w3.org/TR/alreq/ "https://www.w3.org/TR/alreq/"
 [2]: https://aliftype.com/blog/introducing-raqim-kashida/english "https://aliftype.com/blog/introducing-raqim-kashida/english"

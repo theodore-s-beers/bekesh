@@ -95,7 +95,8 @@ should be visually reviewed with the fonts and texts an application supports.
 
 The repository also maintains the research that informed the implementation:
 
-- [Research synthesis](plan.md) — the original survey and proposed architecture
+- [Research synthesis](docs/research-synthesis.md) — the original survey and
+  proposed architecture
 - [Prior-art catalog](docs/catalog.md) — a map of projects and standards
 - [Implementation comparison](docs/comparison.md) — responsibilities and
   tradeoffs side by side

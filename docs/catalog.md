@@ -143,7 +143,7 @@ data. Recreate minimal strings independently and preserve links to the report.
 
 ## Academic and advanced systems backlog
 
-These are cataloged in [the research synthesis](../plan.md) but need dedicated
+These are cataloged in [the research synthesis](research-synthesis.md) but need dedicated
 source notes after the primary publications are obtained:
 
 - Benatia, Elyaakoubi, and Lazrek, “Arabic Text Justification” (2006)

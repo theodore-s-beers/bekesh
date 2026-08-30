@@ -1,5 +1,6 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": ["test/**/*.test.mjs"],
+  "ignoreBinaries": ["volta"],
   "project": ["src/**/*.ts", "test/**/*.mjs"]
 }

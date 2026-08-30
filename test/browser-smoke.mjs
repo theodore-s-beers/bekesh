@@ -1,0 +1,251 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { createServer } from "node:http";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import { createRequire } from "node:module";
+import { fileURLToPath } from "node:url";
+
+const FONT_URL =
+  "https://raw.githubusercontent.com/google/fonts/831b58ab22a076d54104f7a71fa6f00bd956fc50/ofl/scheherazadenew/ScheherazadeNew-Regular.ttf";
+const FONT_SHA256 = "794bac8dc9e83d1d620bc471ea694f5f31d0965ce8006490a79dfc51a2d283b3";
+const TARGET_WIDTH = 256;
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+const repository = path.resolve(dirname, "..");
+const require = createRequire(import.meta.url);
+
+const texts = [
+  "به نام خداوند جان و خرد",
+  "کزین برتر اندیشه برنگذرد",
+  "خداوند نام و خداوند جای",
+  "خداوند روزی ده رهنمای",
+  "می‌دانم که ایران سرای من است",
+  "توانا بود هر که دانا بود",
+  "ز دانش دل پیر برنا بود",
+  "چو ایران نباشد تن من مباد",
+  "بدین بوم و بر زنده یک تن مباد",
+  "همه سر به سر تن به کشتن دهیم",
+  "از آن به که کشور به دشمن دهیم",
+];
+const fontSizes = [16, 16.1, 20, 22.3, 29.1];
+
+function loadSystemPlaywright() {
+  const candidates = [];
+  if (process.env.KASHIDA_PLAYWRIGHT_PATH) {
+    candidates.push(process.env.KASHIDA_PLAYWRIGHT_PATH);
+  }
+
+  try {
+    const cli = execFileSync("volta", ["which", "playwright"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    candidates.push(path.resolve(path.dirname(cli), "../lib/node_modules/playwright"));
+  } catch {
+    // A non-Volta global installation may still be available below.
+  }
+
+  try {
+    const globalRoot = execFileSync("npm", ["root", "--global"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    }).trim();
+    candidates.push(path.join(globalRoot, "playwright"));
+  } catch {
+    // Report one actionable error after trying every supported installation.
+  }
+
+  for (const candidate of candidates) {
+    try {
+      return require(candidate);
+    } catch {
+      // Try the next system installation.
+    }
+  }
+
+  throw new Error(
+    "System Playwright was not found. Run `volta install playwright` or set KASHIDA_PLAYWRIGHT_PATH.",
+  );
+}
+
+async function fontFixture() {
+  const directory = path.join(tmpdir(), "kashida-browser-tests");
+  const filename = path.join(directory, "ScheherazadeNew-Regular.ttf");
+  await mkdir(directory, { recursive: true });
+
+  let data;
+  try {
+    data = await readFile(filename);
+  } catch {
+    // Download below.
+  }
+
+  if (!data || createHash("sha256").update(data).digest("hex") !== FONT_SHA256) {
+    const response = await fetch(FONT_URL);
+    if (!response.ok) {
+      throw new Error(`Could not download the test font: ${response.status}`);
+    }
+    data = Buffer.from(await response.arrayBuffer());
+    await writeFile(filename, data);
+  }
+
+  const digest = createHash("sha256").update(data).digest("hex");
+  assert.equal(digest, FONT_SHA256, "The cached test font does not match its pinned digest");
+  return filename;
+}
+
+function startServer(fontPath) {
+  const server = createServer((request, response) => {
+    const pathname = new URL(request.url, "http://localhost").pathname;
+    if (pathname === "/") {
+      response.setHeader("content-type", "text/html; charset=utf-8");
+      response.end(
+        '<style>@font-face{font-family:"Scheherazade Test";src:url(/font.ttf)}body{margin:0}</style>',
+      );
+      return;
+    }
+    if (pathname === "/font.ttf") {
+      response.setHeader("content-type", "font/ttf");
+      createReadStream(fontPath).pipe(response);
+      return;
+    }
+    if (pathname.startsWith("/dist/")) {
+      const filename = path.join(repository, pathname.slice(1));
+      const dist = path.join(repository, "dist") + path.sep;
+      if (!filename.startsWith(dist)) {
+        response.statusCode = 403;
+        response.end();
+        return;
+      }
+      response.setHeader("content-type", "text/javascript; charset=utf-8");
+      createReadStream(filename)
+        .on("error", () => {
+          response.statusCode = 404;
+          response.end();
+        })
+        .pipe(response);
+      return;
+    }
+    response.statusCode = 404;
+    response.end();
+  });
+
+  return new Promise((resolve) => {
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      assert(address && typeof address !== "string");
+      resolve({ server, origin: `http://127.0.0.1:${address.port}` });
+    });
+  });
+}
+
+async function runBrowser(browserName, browserType, origin) {
+  const browser = await browserType.launch({ headless: true });
+  try {
+    const page = await browser.newPage();
+    await page.goto(origin);
+    const report = await page.evaluate(
+      async ({ browserName, fontSizes, origin, targetWidth, texts }) => {
+        const { justifyWithKashida } = await import(`${origin}/dist/index.js`);
+        const rows = [];
+
+        for (const fontSize of fontSizes) {
+          const font = `${fontSize}px "Scheherazade Test"`;
+          await document.fonts.load(font, texts.join(""));
+
+          for (const text of texts) {
+            const result = await justifyWithKashida({ text, targetWidth, font });
+            const span = document.createElement("span");
+            span.style.cssText = `position:absolute;display:inline-block;white-space:pre;direction:rtl;font:${font};word-spacing:${result.wordSpacing}px`;
+            span.textContent = result.displayText;
+            document.body.append(span);
+            const renderedWidth = span.getBoundingClientRect().width;
+            span.remove();
+
+            const zeroSpacing = document.createElement("span");
+            zeroSpacing.style.cssText = `position:absolute;display:inline-block;white-space:pre;direction:rtl;font:${font};word-spacing:0`;
+            zeroSpacing.textContent = result.displayText;
+            document.body.append(zeroSpacing);
+            const measuredWidth = zeroSpacing.getBoundingClientRect().width;
+            zeroSpacing.remove();
+
+            const container = document.createElement("div");
+            container.style.cssText = `position:absolute;width:${targetWidth}px;direction:rtl;font:${font};line-height:1.5;word-spacing:${result.wordSpacing}px`;
+            container.textContent = result.displayText;
+            document.body.append(container);
+            const range = document.createRange();
+            range.selectNodeContents(container);
+            const lineTops = new Set(
+              [...range.getClientRects()].map((rectangle) => Math.round(rectangle.top * 64)),
+            );
+            container.remove();
+
+            rows.push({
+              browserName,
+              fontSize,
+              text,
+              renderedWidth,
+              measuredWidth,
+              lineCount: lineTops.size,
+              result,
+            });
+          }
+        }
+        return rows;
+      },
+      { browserName, fontSizes, origin, targetWidth: TARGET_WIDTH, texts },
+    );
+
+    let fitted = 0;
+    let sourceOverflows = 0;
+    let adjusted = 0;
+    for (const row of report) {
+      assert.ok(
+        Math.abs(row.measuredWidth - row.result.measuredWidth) < 0.001,
+        `${browserName} returned a non-DOM measuredWidth for ${row.text}`,
+      );
+
+      if (row.result.diagnostics.includes("source-overflows-target")) {
+        sourceOverflows += 1;
+        assert.ok(row.result.sourceWidth > TARGET_WIDTH);
+        assert.equal(row.result.displayText, row.result.sourceText);
+        assert.equal(row.result.wordSpacing, 0);
+        continue;
+      }
+
+      fitted += 1;
+      if (row.result.diagnostics.includes("dom-verification-adjusted")) {
+        adjusted += 1;
+      }
+      assert.ok(
+        row.renderedWidth <= TARGET_WIDTH,
+        `${browserName} overflowed by ${row.renderedWidth - TARGET_WIDTH}px at ${row.fontSize}px: ${row.text}`,
+      );
+      assert.equal(
+        row.lineCount,
+        1,
+        `${browserName} wrapped fitted text at ${row.fontSize}px: ${row.text}`,
+      );
+    }
+
+    return { browserName, total: report.length, fitted, sourceOverflows, adjusted };
+  } finally {
+    await browser.close();
+  }
+}
+
+const { chromium, firefox } = loadSystemPlaywright();
+const fontPath = await fontFixture();
+const { server, origin } = await startServer(fontPath);
+try {
+  const reports = [
+    await runBrowser("chromium", chromium, origin),
+    await runBrowser("firefox", firefox, origin),
+  ];
+  console.log(JSON.stringify(reports, null, 2));
+} finally {
+  server.close();
+}

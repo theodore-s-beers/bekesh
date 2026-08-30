@@ -20,7 +20,8 @@
     "format:check": "oxfmt --check",
     "knip": "knip",
     "lint": "oxlint src test",
-    "test": "pnpm build && node --test",
+    "test": "pnpm build && node --test test/*.test.mjs",
+    "test:browser": "pnpm build && node test/browser-smoke.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

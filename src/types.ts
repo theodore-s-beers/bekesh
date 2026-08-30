@@ -3,7 +3,7 @@ export interface JustifyOptions {
   text: string;
   /** Desired inline width in CSS pixels. */
   targetWidth: number;
-  /** A valid CSS canvas-font shorthand, including its size. */
+  /** A valid CSS font shorthand, including its size. */
   font: string;
   /** Permitted measurement overshoot in CSS pixels. Defaults to zero. */
   tolerance?: number;

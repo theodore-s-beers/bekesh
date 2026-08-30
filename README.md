@@ -24,9 +24,9 @@ problem, and which failures should become regression tests.
 
 ## Prototype API
 
-The current MVP measures with the browser's Canvas implementation, inserts
-U+0640 without exceeding the requested width, and returns CSS word spacing for
-the residual:
+The current MVP uses Canvas for fast candidate search, verifies the selected
+result against browser DOM layout, inserts U+0640 without exceeding the
+requested width, and returns CSS word spacing for the residual:
 
 ```ts
 import { justifyWithKashida } from "kashida";
@@ -56,8 +56,21 @@ room for a HarfBuzz backend later.
 ```sh
 pnpm install
 pnpm test
+pnpm test:browser
 pnpm check
 pnpm format:check
+```
+
+`test:browser` is an opt-in integration suite. It expects a system Playwright
+installation with Chromium and Firefox, and downloads a pinned Scheherazade New
+font into the operating system's temporary directory. The normal test and
+check commands do not require Playwright or network access.
+
+One way to provide the system browser tooling is:
+
+```sh
+volta install playwright
+playwright install chromium firefox
 ```
 
 ## Scope

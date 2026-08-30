@@ -1,0 +1,86 @@
+[
+  {
+    "id": "basic-dual-joining",
+    "text": "بيت",
+    "focus": ["joining", "candidate-selection"],
+    "invariants": [
+      "A candidate must lie on an actual connection.",
+      "No edit may split a grapheme cluster."
+    ]
+  },
+  {
+    "id": "combining-marks",
+    "text": "نَّص",
+    "focus": ["combining-marks", "index-mapping"],
+    "invariants": [
+      "Neighbor lookup skips all combining marks.",
+      "Insertion does not move marks to a different base."
+    ]
+  },
+  {
+    "id": "lam-alef",
+    "text": "ملاعب",
+    "focus": ["ligature", "lam-alef"],
+    "invariants": [
+      "No tatweel is inserted between lam and alef.",
+      "Any accepted edit remains safe after shaping."
+    ]
+  },
+  {
+    "id": "existing-bare-tatweel",
+    "text": "بيـت",
+    "focus": ["existing-tatweel", "reversibility"],
+    "codePoints": ["U+0628", "U+064A", "U+0640", "U+062A"],
+    "invariants": [
+      "The API makes its remove-or-preserve policy explicit.",
+      "Returned edits distinguish source characters from inserted characters."
+    ]
+  },
+  {
+    "id": "tatweel-mark-seat",
+    "text": "هـٰذا",
+    "focus": ["existing-tatweel", "combining-marks"],
+    "codePoints": ["U+0647", "U+0640", "U+0670", "U+0630", "U+0627"],
+    "invariants": [
+      "A tatweel carrying superscript alef is not stripped as decorative input.",
+      "The combining mark remains attached to its intended seat."
+    ]
+  },
+  {
+    "id": "zwnj-boundary",
+    "text": "ب\u200cب",
+    "focus": ["zwnj", "joining"],
+    "codePoints": ["U+0628", "U+200C", "U+0628"],
+    "invariants": ["No candidate crosses the ZWNJ boundary."]
+  },
+  {
+    "id": "zwj-request",
+    "text": "ب\u200dب",
+    "focus": ["zwj", "joining", "shaping-safety"],
+    "codePoints": ["U+0628", "U+200D", "U+0628"],
+    "invariants": ["Candidate and safety decisions preserve the explicit joining request."]
+  },
+  {
+    "id": "right-joining-boundary",
+    "text": "دار",
+    "focus": ["right-joining", "candidate-selection"],
+    "invariants": ["No candidate follows a character that cannot join left."]
+  },
+  {
+    "id": "persian-letters",
+    "text": "گسترش",
+    "focus": ["persian", "unicode-joining-groups"],
+    "invariants": [
+      "Candidate discovery uses Unicode joining properties rather than an Arabic-only literal range."
+    ]
+  },
+  {
+    "id": "mixed-run",
+    "text": "النص 2026، مثال",
+    "focus": ["mixed-content", "run-boundaries", "digits", "punctuation"],
+    "invariants": [
+      "Candidates stay inside resolved Arabic-script joining runs.",
+      "Punctuation and digit order are unchanged."
+    ]
+  }
+]

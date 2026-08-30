@@ -26,7 +26,7 @@ const NON_JOINING = new Set(
   ),
 );
 
-export function joiningType(character: string): JoiningType {
+function joiningType(character: string): JoiningType {
   if (character === "\u0640" || character === "\u200d") {
     return "causing";
   }

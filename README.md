@@ -1,64 +1,118 @@
 # Bekesh
 
-This repository is a working library of prior art for a future TypeScript
-implementation of Arabic-script justification by kashida (elongation), with an
-initial focus on inserting U+0640 ARABIC TATWEEL.
+Bekesh is an ESM-only browser library for fitting Persian and Arabic-script
+text to a target width. It inserts U+0640 ARABIC TATWEEL at heuristic
+elongation points, then returns CSS word spacing for any width that remains.
 
-The repository combines prior-art research with an early browser-first
-implementation. Its purpose is to make the design evidence inspectable: what
-each existing system does, which parts are reusable, where shaping changes the
-problem, and which failures should become regression tests.
+Bekesh measures the requested font in the browser and verifies its result
+against DOM layout. It is currently an early 0.x library focused on Persian
+text in Naskh-style fonts.
 
-## Start here
+## Install
 
-- [Research synthesis](plan.md) — the original survey and proposed architecture
-- [Prior-art catalog](docs/catalog.md) — a compact map of projects and standards
-- [Implementation comparison](docs/comparison.md) — responsibilities and
-  tradeoffs side by side
-- [Source notes](docs/sources/README.md) — detailed notes tied to specific source
-  revisions
-- [Regression corpus](corpus/README.md) — test categories and fixture policy
-- [`cases.json`](corpus/cases.json) — machine-readable starter cases
-- [Third-party notices](THIRD_PARTY_NOTICES.md) — provenance and terms for the
-  compact Unicode joining-property data
+```sh
+pnpm add bekesh
+```
 
-## Prototype API
+Or use `npm install bekesh`.
 
-The current MVP uses Canvas for fast candidate search, verifies the selected
-result against browser DOM layout, inserts U+0640 without exceeding the
-requested width, and returns CSS word spacing for the residual:
+## Usage
 
 ```ts
 import { justifyWithKashida } from "bekesh";
 
+const sourceText = "توانا بود هر که دانا بود";
+const font = '32px "Scheherazade New"';
 const result = await justifyWithKashida({
-  text: "توانا بود هر که دانا بود",
+  text: sourceText,
   targetWidth: 420,
-  font: '32px "Scheherazade New"',
+  font,
 });
 
 element.textContent = result.displayText;
-element.style.font = '32px "Scheherazade New"';
+element.style.font = font;
 element.style.wordSpacing = `${result.wordSpacing}px`;
+element.style.direction = "rtl";
+element.style.whiteSpace = "nowrap";
 ```
 
-`justifyWithKashida()` waits for the requested font to load. The caller must
-render with the same typographic settings used for measurement. The current
-fallback counts ordinary U+0020 spaces; line breaking, shrinking, and mixed-run
-bidi layout are outside the MVP.
+Pass clean source text on every call. `displayText` contains presentation
+characters and should not replace the original text in application state.
+`targetWidth` is a CSS-pixel content width. The element must use the same font
+and other typographic settings used for measurement.
 
-The pure `fitWithKashida()` operation accepts an injected measurer and candidate
-engine. This keeps the allocation algorithm deterministic in tests and leaves
-room for a HarfBuzz backend later.
+`justifyWithKashida()` waits for the requested font through the CSS Font Loading
+API. It uses Canvas for candidate search, verifies the fitted text and word
+spacing in a hidden DOM element, and backs off when the browser's inline layout
+would exceed the target.
 
-### Development
+## API
+
+```ts
+function justifyWithKashida(
+  options: JustifyOptions,
+  candidateEngine?: CandidateEngine,
+): Promise<JustificationResult>;
+```
+
+`JustifyOptions` contains:
+
+- `text`: clean source text; it is not mutated or normalized.
+- `targetWidth`: desired inline width in CSS pixels.
+- `font`: a valid CSS `font` shorthand, including the font size.
+- `tolerance`: optional permitted overshoot in CSS pixels; defaults to zero.
+
+The result includes the source and display strings, measured widths, residual
+width, per-space `wordSpacing`, inserted tatweel edits, and diagnostic strings.
+If the clean source already exceeds the target, Bekesh returns it unchanged
+with the `source-overflows-target` diagnostic.
+
+The package also exports:
+
+- `fitWithKashida()` for deterministic use with an injected text measurer.
+- `findPersianNaskhCandidates()` and `persianNaskhCandidateEngine`.
+- `canvasTextMeasurer`.
+- TypeScript types for options, results, candidates, edits, engines, and
+  measurers.
+
+## Browser and layout requirements
+
+Bekesh requires a modern browser with ES modules, the DOM, Canvas 2D,
+`document.fonts`, and `Intl.Segmenter` support. It has no runtime dependencies.
+
+Measurement currently models the CSS `font` shorthand, direction, and returned
+word spacing. Font features, variation settings, language, letter spacing,
+transforms, fallback selection, and other shaping inputs are not API options.
+If those differ between measurement and rendering, the final element can have
+a different width. Padding and borders are likewise outside `targetWidth`.
+
+The default candidate engine handles one resolved Persian/Arabic-script line.
+It does not perform paragraph line breaking, bidi resolution, font fallback,
+shrinking, or calligraphic glyph elongation. Candidate choice is heuristic and
+should be visually reviewed with the fonts and texts an application supports.
+
+## Research and prior art
+
+The repository also maintains the research that informed the implementation:
+
+- [Research synthesis](plan.md) — the original survey and proposed architecture
+- [Prior-art catalog](docs/catalog.md) — a map of projects and standards
+- [Implementation comparison](docs/comparison.md) — responsibilities and
+  tradeoffs side by side
+- [Source notes](docs/sources/README.md) — notes tied to specific revisions
+- [Regression corpus](corpus/README.md) and
+  [`cases.json`](corpus/cases.json) — test categories and starter cases
+
+Research notes prefer primary sources and pin code observations to revisions
+where possible. U+0640 output is treated as a reversible presentation artifact,
+not source text.
+
+## Development
 
 ```sh
 pnpm install
-pnpm test
-pnpm test:browser
 pnpm check
-pnpm format:check
+pnpm test:browser
 ```
 
 `test:browser` is an opt-in integration suite. It expects a system Playwright
@@ -73,38 +127,8 @@ volta install playwright
 playwright install chromium firefox
 ```
 
-## Scope
+## License
 
-The first implementation informed by this research should accept one resolved
-Arabic-script run and a concrete font, then:
-
-1. find culturally and stylistically appropriate elongation candidates;
-2. reject candidates that are unsafe for the actual shaped run;
-3. insert, reshape, and measure against a target width; and
-4. return reversible edits rather than treating the modified string as source
-   text.
-
-Paragraph line breaking, bidi resolution, fallback-font selection, and fully
-calligraphic or variable-glyph elongation are useful later work, but they are
-not the proposed MVP.
-
-## Research conventions
-
-- Prefer primary sources: project code, specifications, issue reports, and
-  papers.
-- Pin code observations to a commit when possible. Links to moving branches are
-  for navigation only.
-- Distinguish observed behavior from a proposed design.
-- Record licensing before copying any code or fixtures. This repository
-  currently contains notes and newly written test inputs, not vendored source.
-- Preserve clean Arabic source text. U+0640 output is a presentation artifact.
-- Use “kashida” for the broader typographic concept and “tatweel” when the
-  mechanism specifically means inserting U+0640.
-
-## Adding a source
-
-Add the source to [the catalog](docs/catalog.md), create a note under
-`docs/sources/` when it contributes an algorithm or failure case, and add only
-the smallest independently written regression case needed to preserve the
-lesson. Include an access date, revision or publication version, upstream URL,
-license status, and a clear “use for our design” section.
+Bekesh is available under the [MIT License](LICENSE). See
+[third-party notices](THIRD_PARTY_NOTICES.md) for the provenance and terms of
+the compact Unicode joining-property data.

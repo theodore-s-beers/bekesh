@@ -2,16 +2,37 @@
   "name": "bekesh",
   "version": "0.1.0",
   "description": "Browser-first Persian kashida justification",
+  "keywords": [
+    "arabic",
+    "justification",
+    "kashida",
+    "persian",
+    "typography"
+  ],
+  "homepage": "https://github.com/theodore-s-beers/bekesh#readme",
+  "bugs": {
+    "url": "https://github.com/theodore-s-beers/bekesh/issues"
+  },
+  "license": "MIT",
+  "author": "Theodore Beers",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theodore-s-beers/bekesh.git"
+  },
   "files": [
     "dist",
     "THIRD_PARTY_NOTICES.md"
   ],
   "type": "module",
+  "sideEffects": false,
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -20,6 +41,7 @@
     "format:check": "oxfmt --check",
     "knip": "knip",
     "lint": "oxlint src test",
+    "prepack": "tsc -p tsconfig.json",
     "test": "pnpm build && node --test test/*.test.mjs",
     "test:browser": "pnpm build && node test/browser-smoke.mjs",
     "typecheck": "tsc -p tsconfig.json --noEmit"

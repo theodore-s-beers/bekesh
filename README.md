@@ -4,10 +4,10 @@ This repository is a working library of prior art for a future TypeScript
 implementation of Arabic-script justification by kashida (elongation), with an
 initial focus on inserting U+0640 ARABIC TATWEEL.
 
-The repository is research, not yet an implementation. Its purpose is to make
-the design evidence inspectable: what each existing system does, which parts
-are reusable, where shaping changes the problem, and which failures should
-become regression tests.
+The repository combines prior-art research with an early browser-first
+implementation. Its purpose is to make the design evidence inspectable: what
+each existing system does, which parts are reusable, where shaping changes the
+problem, and which failures should become regression tests.
 
 ## Start here
 
@@ -19,6 +19,46 @@ become regression tests.
   revisions
 - [Regression corpus](corpus/README.md) — test categories and fixture policy
 - [`cases.json`](corpus/cases.json) — machine-readable starter cases
+- [Third-party notices](THIRD_PARTY_NOTICES.md) — provenance and terms for the
+  compact Unicode joining-property data
+
+## Prototype API
+
+The current MVP measures with the browser's Canvas implementation, inserts
+U+0640 without exceeding the requested width, and returns CSS word spacing for
+the residual:
+
+```ts
+import { justifyWithKashida } from "kashida";
+
+const result = await justifyWithKashida({
+  text: "توانا بود هر که دانا بود",
+  targetWidth: 420,
+  font: '32px "Scheherazade New"',
+});
+
+element.textContent = result.displayText;
+element.style.font = '32px "Scheherazade New"';
+element.style.wordSpacing = `${result.wordSpacing}px`;
+```
+
+`justifyWithKashida()` waits for the requested font to load. The caller must
+render with the same typographic settings used for measurement. The current
+fallback counts ordinary U+0020 spaces; line breaking, shrinking, and mixed-run
+bidi layout are outside the MVP.
+
+The pure `fitWithKashida()` operation accepts an injected measurer and candidate
+engine. This keeps the allocation algorithm deterministic in tests and leaves
+room for a HarfBuzz backend later.
+
+### Development
+
+```sh
+pnpm install
+pnpm test
+pnpm check
+pnpm format:check
+```
 
 ## Scope
 

@@ -35,7 +35,7 @@ export const canvasTextMeasurer: TextMeasurer = (text, font) => {
 
 function domElement(): HTMLSpanElement {
   if (typeof document === "undefined") {
-    throw new Error("justifyWithKashida requires a browser document");
+    throw new Error("DOM text measurement requires a browser document");
   }
 
   domMeasurementElement ??= document.createElement("span");
@@ -60,12 +60,16 @@ function domElement(): HTMLSpanElement {
   return domMeasurementElement;
 }
 
-function measureDomText(text: string, font: string, wordSpacing: number): number {
+function measureDomTextWithWordSpacing(text: string, font: string, wordSpacing: number): number {
   const element = domElement();
   element.style.font = font;
   element.style.wordSpacing = `${wordSpacing}px`;
   element.textContent = text;
   return element.getBoundingClientRect().width;
+}
+
+export function measureDomText(text: string, font: string): number {
+  return measureDomTextWithWordSpacing(text, font, 0);
 }
 
 function uniqueDiagnostics(
@@ -80,7 +84,7 @@ function browserResult(
   sourceWidth: number,
   domAdjusted: boolean,
 ): JustificationResult {
-  const measuredWidth = measureDomText(result.displayText, options.font, 0);
+  const measuredWidth = measureDomText(result.displayText, options.font);
   const remainingWidth = options.targetWidth - measuredWidth;
   const spaces = result.adjustableSpaceCount;
   let wordSpacing = remainingWidth > 0 && spaces > 0 ? remainingWidth / spaces : 0;
@@ -88,7 +92,7 @@ function browserResult(
 
   if (
     wordSpacing > 0 &&
-    measureDomText(result.displayText, options.font, wordSpacing) >
+    measureDomTextWithWordSpacing(result.displayText, options.font, wordSpacing) >
       options.targetWidth + (options.tolerance ?? 0)
   ) {
     let safe = 0;
@@ -96,7 +100,7 @@ function browserResult(
     for (let step = 0; step < WORD_SPACING_SEARCH_STEPS; step += 1) {
       const middle = (safe + unsafe) / 2;
       if (
-        measureDomText(result.displayText, options.font, middle) <=
+        measureDomTextWithWordSpacing(result.displayText, options.font, middle) <=
         options.targetWidth + (options.tolerance ?? 0)
       ) {
         safe = middle;
@@ -140,7 +144,7 @@ export async function justifyWithKashida(
   await document.fonts.load(options.font, options.text);
 
   const tolerance = options.tolerance ?? 0;
-  const sourceWidth = measureDomText(options.text, options.font, 0);
+  const sourceWidth = measureDomText(options.text, options.font);
   let result = fitWithKashida(options, canvasTextMeasurer, candidateEngine);
 
   if (sourceWidth > options.targetWidth + tolerance) {
@@ -160,7 +164,7 @@ export async function justifyWithKashida(
   let internalTarget = options.targetWidth;
   let domAdjusted = false;
   for (let attempt = 0; attempt < MAXIMUM_DOM_REFITS; attempt += 1) {
-    const domWidth = measureDomText(result.displayText, options.font, 0);
+    const domWidth = measureDomText(result.displayText, options.font);
     if (domWidth <= options.targetWidth + tolerance) {
       return browserResult(result, options, sourceWidth, domAdjusted);
     }

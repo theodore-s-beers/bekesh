@@ -149,7 +149,7 @@ async function runBrowser(browserName, browserType, origin) {
     await page.goto(origin);
     const report = await page.evaluate(
       async ({ browserName, fontSizes, origin, targetWidth, texts }) => {
-        const { justifyWithKashida } = await import(`${origin}/dist/index.js`);
+        const { justifyWithKashida, measureDomText } = await import(`${origin}/dist/index.js`);
         const rows = [];
 
         for (const fontSize of fontSizes) {
@@ -157,6 +157,14 @@ async function runBrowser(browserName, browserType, origin) {
           await document.fonts.load(font, texts.join(""));
 
           for (const text of texts) {
+            const sourceWidth = measureDomText(text, font);
+            const sourceReference = document.createElement("span");
+            sourceReference.style.cssText = `position:absolute;display:inline-block;white-space:pre;direction:rtl;font:${font};word-spacing:0`;
+            sourceReference.textContent = text;
+            document.body.append(sourceReference);
+            const sourceReferenceWidth = sourceReference.getBoundingClientRect().width;
+            sourceReference.remove();
+
             const result = await justifyWithKashida({ text, targetWidth, font });
             const span = document.createElement("span");
             span.style.cssText = `position:absolute;display:inline-block;white-space:pre;direction:rtl;font:${font};word-spacing:${result.wordSpacing}px`;
@@ -187,6 +195,8 @@ async function runBrowser(browserName, browserType, origin) {
               browserName,
               fontSize,
               text,
+              sourceWidth,
+              sourceReferenceWidth,
               renderedWidth,
               measuredWidth,
               lineCount: lineTops.size,
@@ -203,6 +213,14 @@ async function runBrowser(browserName, browserType, origin) {
     let sourceOverflows = 0;
     let adjusted = 0;
     for (const row of report) {
+      assert.ok(
+        Math.abs(row.sourceWidth - row.sourceReferenceWidth) < 0.001,
+        `${browserName} returned an inaccurate DOM width for ${row.text}`,
+      );
+      assert.ok(
+        Math.abs(row.sourceWidth - row.result.sourceWidth) < 0.001,
+        `${browserName} returned an inconsistent sourceWidth for ${row.text}`,
+      );
       assert.ok(
         Math.abs(row.measuredWidth - row.result.measuredWidth) < 0.001,
         `${browserName} returned a non-DOM measuredWidth for ${row.text}`,

@@ -82,11 +82,20 @@ with the `source-overflows-target` diagnostic.
 
 The package also exports:
 
+- `measureDomText(text, font)` for the natural DOM-rendered width of clean text.
 - `fitWithKashida()` for deterministic use with an injected text measurer.
 - `findPersianNaskhCandidates()` and `persianNaskhCandidateEngine`.
 - `canvasTextMeasurer`.
 - TypeScript types for options, results, candidates, edits, engines, and
   measurers, including `JustificationDiagnostic`.
+
+`measureDomText()` is synchronous and does not load fonts. Wait for the font
+before measuring when it may not be ready:
+
+```ts
+await document.fonts.load(font, sourceText);
+const sourceWidth = measureDomText(sourceText, font);
+```
 
 ## Browser and layout requirements
 

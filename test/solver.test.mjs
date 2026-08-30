@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { fitWithKashida, justifyWithKashida } from "../dist/index.js";
+import { fitWithKashida, justifyWithKashida, measureDomText } from "../dist/index.js";
 
 const additiveMeasurer = (text) =>
   [...text].reduce((width, character) => {
@@ -99,6 +99,10 @@ test("the convenience API reports its browser-only requirement", async () => {
     justifyWithKashida({ text: "متن", targetWidth: 100, font: "20px serif" }),
     /browser document/,
   );
+});
+
+test("the DOM measurer reports its browser-only requirement", () => {
+  assert.throws(() => measureDomText("متن", "20px serif"), /browser document/);
 });
 
 test("validates target width and font input", () => {

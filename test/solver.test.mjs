@@ -84,6 +84,29 @@ test("tries a lower-priority point when its contextual gain fits", () => {
   assert.equal(result.edits[0].ruleId, "narrow");
 });
 
+test("inserts at source offsets independently of activation order", () => {
+  const candidateEngine = {
+    findCandidates: () => [
+      { utf16Index: 3, wordIndex: 0, priority: 100, ruleId: "later" },
+      { utf16Index: 1, wordIndex: 1, priority: 50, ruleId: "earlier" },
+    ],
+  };
+  const result = fitWithKashida(
+    { text: "abcd", targetWidth: 42, font: "20px serif" },
+    (text) => [...text].reduce((width, character) => width + (character === "ـ" ? 1 : 10), 0),
+    candidateEngine,
+  );
+
+  assert.equal(result.displayText, "aـbcـd");
+  assert.deepEqual(
+    result.edits.map(({ utf16Index, count }) => ({ utf16Index, count })),
+    [
+      { utf16Index: 1, count: 1 },
+      { utf16Index: 3, count: 1 },
+    ],
+  );
+});
+
 test("rejects candidates whose inserted tatweel has no measurable gain", () => {
   const result = fitWithKashida(
     { text: "متن", targetWidth: 100, font: "20px serif" },

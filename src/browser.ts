@@ -8,6 +8,7 @@ import type {
 } from "./types.js";
 
 let measurementContext: CanvasRenderingContext2D | undefined;
+let measurementFont: string | undefined;
 let domMeasurementElement: HTMLSpanElement | undefined;
 
 const MAXIMUM_DOM_REFITS = 128;
@@ -19,7 +20,12 @@ function canvasContext(): CanvasRenderingContext2D {
     throw new Error("justifyWithKashida requires a browser document");
   }
 
-  measurementContext ??= document.createElement("canvas").getContext("2d") ?? undefined;
+  if (!measurementContext) {
+    measurementContext = document.createElement("canvas").getContext("2d") ?? undefined;
+    if (measurementContext) {
+      measurementContext.direction = "rtl";
+    }
+  }
   if (!measurementContext) {
     throw new Error("A 2D canvas context is unavailable");
   }
@@ -28,8 +34,10 @@ function canvasContext(): CanvasRenderingContext2D {
 
 export const canvasTextMeasurer: TextMeasurer = (text, font) => {
   const context = canvasContext();
-  context.font = font;
-  context.direction = "rtl";
+  if (measurementFont !== font) {
+    context.font = font;
+    measurementFont = font;
+  }
   return context.measureText(text).width;
 };
 
@@ -38,25 +46,26 @@ function domElement(): HTMLSpanElement {
     throw new Error("DOM text measurement requires a browser document");
   }
 
-  domMeasurementElement ??= document.createElement("span");
+  if (!domMeasurementElement) {
+    domMeasurementElement = document.createElement("span");
+    const style = domMeasurementElement.style;
+    style.position = "fixed";
+    style.inset = "0 auto auto 0";
+    style.display = "inline-block";
+    style.visibility = "hidden";
+    style.pointerEvents = "none";
+    style.margin = "0";
+    style.padding = "0";
+    style.border = "0";
+    style.direction = "rtl";
+    style.whiteSpace = "pre";
+    domMeasurementElement.setAttribute("aria-hidden", "true");
+  }
   if (!domMeasurementElement.isConnected) {
     const root = document.body ?? document.documentElement;
     root.append(domMeasurementElement);
   }
 
-  const style = domMeasurementElement.style;
-  style.position = "fixed";
-  style.inset = "0 auto auto 0";
-  style.display = "inline-block";
-  style.visibility = "hidden";
-  style.pointerEvents = "none";
-  style.margin = "0";
-  style.padding = "0";
-  style.border = "0";
-  style.direction = "rtl";
-  style.whiteSpace = "pre";
-
-  domMeasurementElement.setAttribute("aria-hidden", "true");
   return domMeasurementElement;
 }
 
@@ -82,9 +91,9 @@ function browserResult(
   result: JustificationResult,
   options: JustifyOptions,
   sourceWidth: number,
+  measuredWidth: number,
   domAdjusted: boolean,
 ): JustificationResult {
-  const measuredWidth = measureDomText(result.displayText, options.font);
   const remainingWidth = options.targetWidth - measuredWidth;
   const spaces = result.adjustableSpaceCount;
   let wordSpacing = remainingWidth > 0 && spaces > 0 ? remainingWidth / spaces : 0;
@@ -166,7 +175,7 @@ export async function justifyWithKashida(
   for (let attempt = 0; attempt < MAXIMUM_DOM_REFITS; attempt += 1) {
     const domWidth = measureDomText(result.displayText, options.font);
     if (domWidth <= options.targetWidth + tolerance) {
-      return browserResult(result, options, sourceWidth, domAdjusted);
+      return browserResult(result, options, sourceWidth, domWidth, domAdjusted);
     }
 
     domAdjusted = true;
@@ -196,6 +205,7 @@ export async function justifyWithKashida(
     },
     options,
     sourceWidth,
+    measureDomText(options.text, options.font),
     true,
   );
 }

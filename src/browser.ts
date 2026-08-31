@@ -14,6 +14,7 @@ let domMeasurementElement: HTMLSpanElement | undefined;
 const MAXIMUM_DOM_REFITS = 128;
 const REFIT_EPSILON = 1e-6;
 const WORD_SPACING_SEARCH_STEPS = 32;
+const WORD_SPACING_EPSILON = 1e-6;
 
 function canvasContext(): CanvasRenderingContext2D {
   if (typeof document === "undefined") {
@@ -99,26 +100,43 @@ function browserResult(
   let wordSpacing = remainingWidth > 0 && spaces > 0 ? remainingWidth / spaces : 0;
   let spacingAdjusted = false;
 
-  if (
-    wordSpacing > 0 &&
-    measureDomTextWithWordSpacing(result.displayText, options.font, wordSpacing) >
-      options.targetWidth + (options.tolerance ?? 0)
-  ) {
-    let safe = 0;
-    let unsafe = wordSpacing;
-    for (let step = 0; step < WORD_SPACING_SEARCH_STEPS; step += 1) {
-      const middle = (safe + unsafe) / 2;
+  if (wordSpacing > 0) {
+    const permittedWidth = options.targetWidth + (options.tolerance ?? 0);
+    const spacedWidth = measureDomTextWithWordSpacing(
+      result.displayText,
+      options.font,
+      wordSpacing,
+    );
+    if (spacedWidth > permittedWidth) {
+      spacingAdjusted = true;
+      // Word spacing is additive in this single-line measurement. Correct by
+      // the observed overflow, then verify in case the browser quantizes the
+      // result unexpectedly.
+      wordSpacing = Math.max(
+        0,
+        wordSpacing - (spacedWidth - permittedWidth) / spaces - WORD_SPACING_EPSILON,
+      );
+
       if (
-        measureDomTextWithWordSpacing(result.displayText, options.font, middle) <=
-        options.targetWidth + (options.tolerance ?? 0)
+        measureDomTextWithWordSpacing(result.displayText, options.font, wordSpacing) >
+        permittedWidth
       ) {
-        safe = middle;
-      } else {
-        unsafe = middle;
+        let safe = 0;
+        let unsafe = wordSpacing;
+        for (let step = 0; step < WORD_SPACING_SEARCH_STEPS; step += 1) {
+          const middle = (safe + unsafe) / 2;
+          if (
+            measureDomTextWithWordSpacing(result.displayText, options.font, middle) <=
+            permittedWidth
+          ) {
+            safe = middle;
+          } else {
+            unsafe = middle;
+          }
+        }
+        wordSpacing = safe;
       }
     }
-    wordSpacing = safe;
-    spacingAdjusted = true;
   }
 
   const diagnostics: JustificationDiagnostic[] = result.diagnostics.filter(

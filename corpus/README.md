@@ -1,14 +1,8 @@
 # Regression corpus
 
-[`cases.json`](cases.json) is a research fixture inventory for candidate
-generation, indexing, shaping-safety, and solver tests. It is not currently
-loaded by the automated test suite; selected cases are independently encoded
-in `test/candidates.test.mjs`. It intentionally does not prescribe the exact
-insertion point for every case: that answer can vary by style rule set and
-font.
+[`cases.json`](cases.json) is a research fixture inventory for candidate generation, indexing, shaping-safety, and solver tests. It is not currently loaded by the automated test suite; selected cases are independently encoded in `test/candidates.test.mjs`. It intentionally does not prescribe the exact insertion point for every case: that answer can vary by style rule set and font.
 
-The corpus stores clean source strings and invariants. Expected display text
-belongs in backend- and font-specific snapshots later.
+The corpus stores clean source strings and invariants. Expected display text belongs in backend- and font-specific snapshots later.
 
 ## Fixture rules
 
@@ -16,12 +10,9 @@ belongs in backend- and font-specific snapshots later.
 - Give invisible characters explicit code-point metadata.
 - Do not normalize strings silently; normalization behavior is part of a test.
 - A candidate engine test may assert points and priorities for a named rule set.
-- A shaping test must name and pin a font file plus shaping features and
-  variations.
-- A solver test must record target width, fit policy, measured result, and
-  reversible edits.
-- Preserve provenance when a case was motivated by an upstream issue, while
-  avoiding wholesale copying of someone else's fixture collection.
+- A shaping test must name and pin a font file plus shaping features and variations.
+- A solver test must record target width, fit policy, measured result, and reversible edits.
+- Preserve provenance when a case was motivated by an upstream issue, while avoiding wholesale copying of someone else's fixture collection.
 
 ## Coverage still needed
 
@@ -31,6 +22,5 @@ belongs in backend- and font-specific snapshots later.
 - punctuation and numeral boundaries;
 - multiple words with competing priority classes;
 - repeated insertion at one point versus distributed insertions;
-- at least one font for simple Naskh, complex Naskh, Nastaliq, and a style that
-  rejects elongation; and
+- at least one font for simple Naskh, complex Naskh, Nastaliq, and a style that rejects elongation; and
 - cluster maps containing supplementary-plane code points.

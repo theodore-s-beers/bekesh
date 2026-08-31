@@ -1,8 +1,6 @@
 # Implementation comparison
 
-No reviewed system supplies the whole pipeline. Bekesh's browser-first
-implementation composes a subset of these ideas; the shaping-aware components
-below remain possible future work.
+No reviewed system supplies the whole pipeline. Bekesh's browser-first implementation composes a subset of these ideas; the shaping-aware components below remain possible future work.
 
 | Source               | Candidate quality      | Shaping-aware | Measures actual run                                                  | Fits target width | Style-specific | TypeScript-ready |
 | -------------------- | ---------------------- | ------------- | -------------------------------------------------------------------- | ----------------- | -------------- | ---------------- |
@@ -16,32 +14,19 @@ below remain possible future work.
 
 ### Candidate generation and shaping safety answer different questions
 
-Raqim-style rules answer “where is elongation desirable in this style?” The
-HarfBuzz flag answers “where can U+0640 be inserted without invalidating the
-current shaping?” Neither substitutes for the other. The candidate list for a
-font-aware solver is their intersection.
+Raqim-style rules answer “where is elongation desirable in this style?” The HarfBuzz flag answers “where can U+0640 be inserted without invalidating the current shaping?” Neither substitutes for the other. The candidate list for a font-aware solver is their intersection.
 
 ### A source index is not always a JavaScript index
 
-Raqim reports grapheme-cluster positions. HarfBuzz exposes source cluster
-values associated with output glyphs. JavaScript string offsets are UTF-16 code
-units. The implementation needs an explicit mapping among all three and must
-not insert inside a combining sequence or surrogate pair.
+Raqim reports grapheme-cluster positions. HarfBuzz exposes source cluster values associated with output glyphs. JavaScript string offsets are UTF-16 code units. The implementation needs an explicit mapping among all three and must not insert inside a combining sequence or surrogate pair.
 
 ### Tatweel width is contextual
 
-Nagwa's isolated-width division is a useful baseline but not a safe model.
-Insertion can change contextual forms, ligatures, alternates, or the behavior
-of repeated extenders. Every proposed edit should be shaped and measured in its
-actual run.
+Nagwa's isolated-width division is a useful baseline but not a safe model. Insertion can change contextual forms, ligatures, alternates, or repeated extenders. Bekesh instead measures the full string after each proposed edit.
 
 ### Allocation is a visual optimization problem
 
-Qt demonstrates a practical greedy policy: retain one preferred Arabic point
-per word, visit priorities from high to low, add extenders while they fit, then
-fall back to spacing. Bekesh's initial solver broadly follows that shape while
-measuring after edits. A bounded beam search could later compare distributions
-that have similar width error but different visual penalties.
+Qt demonstrates a practical greedy policy: retain one preferred Arabic point per word, visit priorities from high to low, add extenders while they fit, then fall back to spacing. Bekesh follows that shape and measures every edited string. A future search could compare distributions with similar widths but different visual quality.
 
 ## Possible shaping-aware pipeline
 
@@ -58,13 +43,8 @@ clean source run
 
 ## Future shaping-backend experiments
 
-1. Verify the meaning and location of HarfBuzz's safe flag in an RTL glyph
-   stream, especially around combining marks and ligatures.
-2. Compare UTF-16, code-point, grapheme, and HarfBuzz cluster indices for the
-   starter corpus.
-3. Measure one and repeated U+0640 insertions at the same connection across
-   simple Naskh, complex Naskh, and Nastaliq fonts.
-4. Compare a TypeScript port of Raqim's matcher against the Rust result, or
-   measure the size and startup cost of a WASM wrapper.
-5. Reproduce Qt's priority allocation on a small, independently implemented
-   model, then compare it with a bounded search.
+1. Verify the meaning and location of HarfBuzz's safe flag in an RTL glyph stream, especially around combining marks and ligatures.
+2. Compare UTF-16, code-point, grapheme, and HarfBuzz cluster indices for the starter corpus.
+3. Measure one and repeated U+0640 insertions at the same connection across simple Naskh, complex Naskh, and Nastaliq fonts.
+4. Compare a TypeScript port of Raqim's matcher against the Rust result, or measure the size and startup cost of a WASM wrapper.
+5. Reproduce Qt's priority allocation on a small, independently implemented model, then compare it with a bounded search.

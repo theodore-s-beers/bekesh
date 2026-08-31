@@ -1,9 +1,6 @@
 # Research synthesis
 
-> This document predates Bekesh's initial implementation. It records the prior
-> art and architectural options considered during design; some proposed
-> interfaces and backend choices differ from the current browser-first API. See
-> the [README](../README.md) for current behavior and usage.
+> This document predates Bekesh's initial implementation. It records the prior art and architectural options considered during design; some proposed interfaces and backend choices differ from the current browser-first API. See the [README](../README.md) for current behavior and usage.
 
 ## Main conclusion
 
@@ -11,7 +8,7 @@ The project is viable because its initial scope is described precisely as **font
 
 That distinction matters. A true kashida can involve reconfiguring a connection, selecting contextual or alternate glyphs, or continuously elongating part of a glyph. A literal U+0640 is an ordinary character whose behavior depends on the font and shaping engine. W3C’s Arabic Layout Requirements describes TATWEEL insertion as the simpler but more limited implementation strategy, and recommends combining elongation with other justification mechanisms in sophisticated systems. ([W3C][1])
 
-The especially fortunate discovery was that **a very closely related project appeared on August 20, 2026**: Khaled Hosny’s `raqim-kashida`. It solves the orthographic and aesthetic-candidate half of the problem while deliberately leaving font shaping, width measurement, and space allocation to the caller. That is close to the architectural boundary adopted for Bekesh. ([حروف ألف][2])
+A closely related project appeared on August 20, 2026: Khaled Hosny’s `raqim-kashida`. It solves the orthographic and aesthetic-candidate half of the problem while leaving font shaping, width measurement, and space allocation to the caller. That is close to Bekesh's architectural boundary. ([حروف ألف][2])
 
 ## The most useful prior art
 
@@ -61,7 +58,7 @@ candidates for the width solver
 
 The relevant HarfBuzz buffer option is `HB_BUFFER_FLAG_PRODUCE_SAFE_TO_INSERT_TATWEEL`, introduced in HarfBuzz 5.1.0 and disabled by default. ([HarfBuzz Manual][4])
 
-`harfbuzzjs` now has a TypeScript/ESM API and exposes buffer and glyph information, making it the most natural shaping backend for a browser-and-Node TypeScript package. Its supplied WASM build is intentionally a reduced HarfBuzz build, so a future integration would need to verify that the required flags and functions are exported, or build a slightly fuller WASM artifact. The project is MIT-licensed. ([GitHub][5])
+`harfbuzzjs` has a TypeScript/ESM API and exposes buffer and glyph information, making it a natural future shaping backend. Its supplied WASM build is reduced, so an integration must verify the required flags and functions. The project is MIT-licensed. ([GitHub][5])
 
 ### 3. Qt’s `QTextEngine`: the best production allocation algorithm to study
 
@@ -125,7 +122,7 @@ This is useful prior art in two ways:
 - Its outward-facing TypeScript API resembles Bekesh's.
 - Its limitations show exactly what Bekesh can improve.
 
-In particular, an isolated tatweel’s width cannot safely be assumed to be an additive constant at every connection. Contextual substitution, ligatures, alternate forms, and the font’s treatment of repeated U+0640 can alter the resulting shaped width. Nor can a broad Arabic-character regex determine whether a connection is typographically suitable. Your solver should therefore insert, reshape, and remeasure rather than estimating the answer through division alone.
+An isolated tatweel’s width is not a safe additive constant. Contextual substitution, ligatures, alternate forms, and repeated U+0640 can change the resulting width. A broad Arabic-character regex also cannot decide whether a connection is suitable. Bekesh therefore inserts and remeasures instead of estimating the result through division alone.
 
 A clearly surfaced license declaration was not found for this repository, so its status would need verification before copying code.
 
@@ -142,7 +139,7 @@ JSTF’s model is especially instructive: it treats justification as a series of
 
 ### 7. Academic and experimental systems
 
-Three items belong in a “beyond the MVP” section of the repository bibliography:
+Three items show approaches beyond literal U+0640 insertion:
 
 **Benatia, Elyaakoubi, and Lazrek, “Arabic Text Justification,” TUGboat 27.2 (2006).** This is a frequently cited account of Arabic justification grounded in traditional typographic and calligraphic processes. ([Semantic Scholar][11])
 
@@ -164,156 +161,35 @@ TypoArabic’s survey adds visual examples showing why baseline-length rectangle
 
 These reports can become independently written test fixtures.
 
-## A possible advanced architecture
+## What Bekesh implemented
 
-Bekesh's initial implementation separates candidate selection, width solving,
-and browser measurement, but uses a CSS font shorthand with Canvas and DOM
-measurement. The interfaces below record a possible shaping-aware direction,
-not the current public API.
+Bekesh separates candidate selection, width solving, and browser measurement. For one line of text it:
 
-The most important design decision is to separate three concerns:
+1. waits for the requested CSS font and measures the clean source;
+2. finds connected candidates at grapheme boundaries with a Persian Naskh heuristic;
+3. inserts one U+0640 at a time and measures each full trial string;
+4. repeats the preferred fitting point in each word;
+5. verifies the result against DOM layout and backs off if needed; and
+6. returns word spacing for the remaining width.
 
-```ts
-interface CandidateEngine {
-  findCandidates(text: string, ruleSet: KashidaRuleSet): readonly KashidaCandidate[];
-}
+The browser supplies shaping. HarfBuzz safety flags, font bytes, OpenType features, variable-font axes, and built-in style-selectable rule sets are not part of the current API. See the [README](../README.md) for its exact contract.
 
-interface ArabicShaper {
-  shape(text: string, font: FontSpec): ShapedRun;
-  measure(run: ShapedRun): number;
-  safeTatweelClusters(run: ShapedRun): ReadonlySet<number>;
-}
+The output remains a **presentation artifact**, not canonical text. Literal tatweels affect search, comparison, copying, and indexing. Bekesh therefore preserves the clean source and reports inserted tatweels as reversible edits. ([University of Reading Research][15])
 
-interface WidthSolver {
-  fit(
-    source: string,
-    candidates: readonly KashidaCandidate[],
-    targetWidth: number,
-    shaper: ArabicShaper,
-    font: FontSpec,
-  ): JustificationResult;
-}
-```
+## Shaping-aware direction
 
-A candidate should identify a **source-text shaping cluster**, not merely a JavaScript UTF-16 index:
-
-```ts
-interface KashidaCandidate {
-  cluster: number;
-  priority: number;
-  wordIndex: number;
-  ruleId: string;
-  maxCount?: number;
-}
-```
-
-Only when producing the final edited string should that cluster be translated into a UTF-16 insertion index.
-
-A plausible public API would be:
-
-```ts
-interface JustifyWithTatweelOptions {
-  text: string;
-  targetWidth: number;
-
-  font: {
-    data: ArrayBuffer;
-    size: number;
-    language?: string;
-    features?: Record<string, boolean | number>;
-    variations?: Record<string, number>;
-  };
-
-  ruleSet?: "arabic-naskh" | "arabic-nastaliq" | "arabic-simple" | KashidaRuleSet;
-
-  fit?: "nearest" | "not-over" | "not-under";
-  maxTatweelsPerPoint?: number;
-  maxPointsPerWord?: number;
-}
-
-interface TatweelEdit {
-  utf16Index: number;
-  count: number;
-  candidatePriority: number;
-  ruleId: string;
-}
-
-interface JustificationResult {
-  sourceText: string;
-  displayText: string;
-  targetWidth: number;
-  measuredWidth: number;
-  residual: number;
-  edits: readonly TatweelEdit[];
-  diagnostics: readonly string[];
-}
-```
-
-The operation was tentatively named `justifyWithTatweel()` or `fitWithKashida()`. The implemented API uses `justifyWithKashida()` and `fitWithKashida()`, while `TatweelEdit` preserves the distinction between calligraphic elongation and literal U+0640 insertion.
-
-## The fitting procedure
-
-For an already selected single Arabic-script line or shaping run:
-
-1. **Shape and measure the untouched text.** If it is already wider than the target, a tatweel-only algorithm cannot solve the problem.
-
-2. **Generate ranked candidates** using Raqim-style, script-style-specific patterns.
-
-3. **Intersect them with HarfBuzz’s safe insertion clusters.**
-
-4. **Evaluate actual shaped gains.** Insert one U+0640 at a candidate, reshape the complete run, and measure it. Do not derive the gain from an isolated tatweel glyph.
-
-5. **Search combinations.** A Qt-like greedy solver is a good MVP: choose at most one preferred point per word, work from higher to lower priority, and add tatweels while useful. A later version can use bounded beam search to find a visually better combination.
-
-6. **Return the nearest permitted result**, along with its residual width and all edits. Optionally apply tightly capped word spacing only after suitable kashida opportunities are exhausted.
-
-A beam-search score could look like:
+A more advanced backend should keep the same separation of concerns but work with shaping clusters rather than only UTF-16 offsets:
 
 ```text
-score =
-    absolute width error
-  + total-tatweel penalty
-  + repeated-tatweels-at-one-point penalty
-  + low-priority-candidate penalty
-  + multiple-points-in-one-word penalty
-  + nearby-kashidas penalty
-  + overshoot penalty
+style-specific ranked candidates
+    -> HarfBuzz shaping and safe-insertion flags
+    -> Qt-inspired width allocation
+    -> font-specific regression tests
 ```
 
-The penalties make a difference because several strings can be equally close to the target width while looking very different.
+Such a backend could accept font bytes and explicit shaping settings. It could also compare several fits by width error and visual penalties instead of using only a greedy search.
 
-## Scope decisions considered
-
-The initial release supports **one already resolved Arabic-script RTL run**, not arbitrary paragraphs containing mixed bidi text, fallback fonts, and line breaking. Paragraph layout introduces a second optimization problem: choosing line breaks and elongation together.
-
-The implemented browser-first API accepts a CSS font shorthand and delegates shaping to the browser. Requiring actual font bytes remains a possible advanced backend: it would make shaping reproducible in Node and the browser and allow explicit handling of OpenType features, variable-font axes, shaping clusters, and HarfBuzz safety flags.
-
-Finally, treat the justified string as a **presentation artifact**, not canonical text. Literal tatweels can affect search, comparison, copying, indexing, and text processing. Preserve the clean source and return the inserted tatweels as a reversible edit list. ([University of Reading Research][15])
-
-## Suggested test matrix
-
-A broader regression suite should cover:
-
-- fully vocalized Arabic with multiple combining marks;
-- existing U+0640 characters;
-- lām–alif and Allāh-related ligatures;
-- ZWJ and ZWNJ;
-- connections after right-joining letters;
-- contextual ligatures and alternate forms;
-- Persian and Urdu letters outside a simplistic Arabic regex;
-- mixed Arabic, punctuation, European digits, and Arabic-Indic digits;
-- fonts representing simple Naskh, more elaborate Naskh, Nastaliq, and a style that rejects elongation;
-- repeated insertions at one point versus one insertion at several words.
-
-The Babel failures and Raqim pattern tests provide a useful seed corpus for most of these categories. ([GitHub][3])
-
-## Possible advanced stack
-
-The strongest practical combination for a future shaping-aware backend would be:
-
-**Raqim patterns for candidate ranking → HarfBuzz WASM for shaping and safety → a Qt-inspired width allocator → Babel and TypoArabic cases for regression testing.**
-
-Nagwa’s TypeScript library provided a useful model of the desired outer API, while `kashida-js` provided a compact baseline against which to demonstrate why style-specific rules and repeated reshaping produce better results. Bekesh began with a lighter browser-native measurement architecture, without closing off later support for HarfBuzz, `jalt`, variable-font elongation, or JSTF-like multi-stage justification.
+The remaining experiments are listed in the [implementation comparison](comparison.md). Fixture gaps are tracked in the [regression corpus](../corpus/README.md).
 
 [1]: https://www.w3.org/TR/alreq/ "https://www.w3.org/TR/alreq/"
 [2]: https://aliftype.com/blog/introducing-raqim-kashida/english "https://aliftype.com/blog/introducing-raqim-kashida/english"

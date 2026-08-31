@@ -255,13 +255,14 @@ async function runBrowser(browserName, browserType, origin) {
   }
 }
 
-const { chromium, firefox } = loadSystemPlaywright();
+const { chromium, firefox, webkit } = loadSystemPlaywright();
 const fontPath = await fontFixture();
 const { server, origin } = await startServer(fontPath);
 try {
   const reports = [
     await runBrowser("chromium", chromium, origin),
     await runBrowser("firefox", firefox, origin),
+    await runBrowser("webkit", webkit, origin),
   ];
   console.log(JSON.stringify(reports, null, 2));
 } finally {

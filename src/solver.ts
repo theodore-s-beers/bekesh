@@ -39,18 +39,19 @@ function validate(options: JustifyOptions) {
   }
 }
 
-function renderEdits(text: string, edits: ReadonlyMap<number, MutableEdit>) {
-  const ordered = [...edits.values()].sort((left, right) => left.utf16Index - right.utf16Index);
-  let cursor = 0;
-  let displayText = "";
-
-  for (const edit of ordered) {
-    displayText += text.slice(cursor, edit.utf16Index);
-    displayText += TATWEEL.repeat(edit.count);
-    cursor = edit.utf16Index;
+function renderTrial(
+  displayText: string,
+  sourceIndex: number,
+  edits: ReadonlyMap<number, MutableEdit>,
+) {
+  let displayIndex = sourceIndex;
+  for (const edit of edits.values()) {
+    if (edit.utf16Index <= sourceIndex) {
+      displayIndex += edit.count;
+    }
   }
 
-  return displayText + text.slice(cursor);
+  return displayText.slice(0, displayIndex) + TATWEEL + displayText.slice(displayIndex);
 }
 
 function groupedCandidates(candidates: readonly TatweelCandidate[]): WordState[] {
@@ -118,21 +119,11 @@ export function fitWithKashida(
 
         for (const candidate of choices) {
           const previous = edits.get(candidate.utf16Index);
-          edits.set(candidate.utf16Index, {
-            ...candidate,
-            count: (previous?.count ?? 0) + 1,
-          });
-
-          const trialText = renderEdits(options.text, edits);
+          const trialText = renderTrial(displayText, candidate.utf16Index, edits);
           const trialWidth = measure(trialText, options.font);
           const gain = trialWidth - measuredWidth;
 
           if (!Number.isFinite(trialWidth) || gain <= MINIMUM_MEASURABLE_GAIN) {
-            if (previous) {
-              edits.set(candidate.utf16Index, previous);
-            } else {
-              edits.delete(candidate.utf16Index);
-            }
             word.rejected.add(candidate.utf16Index);
             if (word.active === candidate) {
               word.active = undefined;
@@ -141,16 +132,15 @@ export function fitWithKashida(
           }
 
           if (trialWidth <= options.targetWidth + tolerance) {
+            edits.set(candidate.utf16Index, {
+              ...candidate,
+              count: (previous?.count ?? 0) + 1,
+            });
             displayText = trialText;
             measuredWidth = trialWidth;
             word.active = candidate;
             madeProgress = true;
           } else {
-            if (previous) {
-              edits.set(candidate.utf16Index, previous);
-            } else {
-              edits.delete(candidate.utf16Index);
-            }
             word.rejected.add(candidate.utf16Index);
             if (hasActiveCandidate) {
               word.exhausted = true;

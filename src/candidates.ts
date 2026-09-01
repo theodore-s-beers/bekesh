@@ -358,7 +358,7 @@ function classify(
   return candidate;
 }
 
-export function findPersianNaskhCandidates(text: string): readonly TatweelCandidate[] {
+export function findNaskhCandidates(text: string): readonly TatweelCandidate[] {
   const candidates: TatweelCandidate[] = [];
 
   for (const run of joinedRuns(clustersOf(text))) {
@@ -378,6 +378,6 @@ export function findPersianNaskhCandidates(text: string): readonly TatweelCandid
   return candidates;
 }
 
-export const persianNaskhCandidateEngine: CandidateEngine = {
-  findCandidates: findPersianNaskhCandidates,
+export const naskhCandidateEngine: CandidateEngine = {
+  findCandidates: findNaskhCandidates,
 };

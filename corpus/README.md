@@ -22,5 +22,5 @@ The corpus stores clean source strings and invariants. Expected display text bel
 - punctuation and numeral boundaries;
 - multiple words with competing priority classes;
 - repeated insertion at one point versus distributed insertions;
-- at least one font for simple Naskh, complex Naskh, Nastaliq, and a style that rejects elongation; and
+- Scheherazade New and at least one additional Naskh typeface; and
 - cluster maps containing supplementary-plane code points.

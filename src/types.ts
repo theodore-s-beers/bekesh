@@ -14,7 +14,7 @@ export interface TatweelCandidate {
   utf16Index: number;
   /** Higher values indicate a more desirable elongation point. */
   priority: number;
-  /** Zero-based whitespace-delimited word index. */
+  /** Zero-based Arabic-script word index. Punctuation and digits start a new word. */
   wordIndex: number;
   ruleId: string;
 }

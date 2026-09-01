@@ -28,11 +28,6 @@ The example justifier is deliberately monospaced. It keeps the highest-ranked po
 
 ## Lessons for Bekesh
 
-Raqim's narrow responsibility and cluster-based output are useful models for a future shaping-aware candidate backend. Bekesh already preserves rule IDs in its results even though Raqim's public point contains only index and priority; provenance helps diagnostics and rule-set comparison.
+Bekesh directly implements the parts of Raqim's Naskh model needed for Persian text: Unicode joining groups, positional rasm folding, joined runs, length-sensitive matrix priorities, and explicit suppressions. It does not include Raqim's pattern language or its other style rules. Bekesh also preserves rule IDs in its results even though Raqim's public point contains only index and priority.
 
-Two future integration paths remain open:
-
-- compile the Rust crate to WASM; or
-- port the pattern compiler and matcher, validating it against upstream tests.
-
-Do not conflate a Raqim candidate with permission from a particular font. Pass it through shaping safety and actual-width evaluation.
+Do not conflate a Naskh-rule candidate with permission from a particular font. A future shaping-aware backend should still apply a font-level safety check before actual-width evaluation.

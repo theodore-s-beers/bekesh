@@ -47,6 +47,18 @@ test("leaves an unavoidable residual when the text has no spaces", () => {
   assert.ok(result.diagnostics.includes("no-adjustable-spaces"));
 });
 
+test("uses word spacing rather than an arbitrary Naskh connection", () => {
+  const result = fitWithKashida(
+    { text: "الله الله", targetWidth: 90, font: "20px serif" },
+    additiveMeasurer,
+  );
+
+  assert.equal(result.sourceWidth, 85);
+  assert.equal(result.displayText, result.sourceText);
+  assert.deepEqual(result.edits, []);
+  assert.equal(result.wordSpacing, 5);
+});
+
 test("does not shrink or add tatweels when the source already overflows", () => {
   const result = fitWithKashida(
     { text: "متن", targetWidth: 20, font: "20px serif" },

@@ -1,8 +1,8 @@
 # Bekesh
 
-Bekesh is an ESM-only browser library that fits a line of Persian or other Arabic-script text to a target width. It inserts U+0640 ARABIC TATWEEL at heuristic elongation points, then returns CSS word spacing for the remaining width.
+Bekesh is an opinionated ESM-only browser library that fits a line of Persian text set in a Naskh-style font to a target width. It inserts U+0640 ARABIC TATWEEL at contextually appropriate elongation points, then returns CSS word spacing for the remaining width.
 
-Bekesh measures the requested font in the browser and verifies its result against DOM layout. Its default rules target Persian text in Naskh-style fonts.
+Bekesh measures the requested font in the browser and verifies its result against DOM layout. Its candidate rules use letter families, positional forms, joined-run length, and explicit Naskh prohibitions. If a word has no suitable elongation point, Bekesh leaves that width to word spacing instead of using an arbitrary connection.
 
 ## Install
 
@@ -33,6 +33,8 @@ element.style.whiteSpace = "pre";
 ```
 
 Pass clean source text on every call. `displayText` contains presentation characters and should not replace the original text in application state. `targetWidth` is a CSS-pixel content width. Render with the same font and RTL direction used for measurement. `white-space: pre` preserves spaces and keeps the text on one line.
+
+An existing bare U+0640 is treated as an author-selected elongation point and receives the highest candidate priority. A tatweel carrying a combining mark remains a mark seat and is not treated as that signal.
 
 `justifyWithKashida()` waits for the requested font through the CSS Font Loading API. It uses Canvas for candidate search, verifies the fitted text and word spacing in a hidden DOM element, and backs off when the browser's inline layout would exceed the target.
 
@@ -83,7 +85,7 @@ Bekesh requires a modern browser with ES modules, the DOM, Canvas 2D, `document.
 
 Measurement currently models the CSS `font` shorthand, direction, and returned word spacing. Font features, variation settings, language, letter spacing, transforms, fallback selection, and other shaping inputs are not API options. If those differ between measurement and rendering, the final element can have a different width. Padding and borders are likewise outside `targetWidth`.
 
-Bekesh fits one line at a time. It does not break paragraphs into lines, shrink overlong source text, or implement calligraphic glyph elongation. The browser handles bidi, shaping, and font fallback; Bekesh does not configure them. Candidate choice is heuristic, so review it with the fonts and texts the application supports.
+Bekesh fits one line at a time. It does not break paragraphs into lines, shrink overlong source text, or implement calligraphic glyph elongation. The browser handles bidi, shaping, and font fallback; Bekesh does not configure them. Its rules are designed for Persian text in Naskh-style fonts, not as a universal Arabic-script justification model. Candidate choice remains heuristic, so review it with the fonts and texts the application supports.
 
 ## Research and prior art
 

@@ -1,5 +1,24 @@
 # Third-party notices
 
+## raqim-kashida
+
+The Naskh candidate rules and some regression fixtures in `src/candidates.ts` and `test/candidates.test.mjs` are adapted from `raqim-kashida`'s `arabic-naskh` pattern set at revision `e95df2093348b7e361298b223e8f360c071fc57a`.
+
+- Naskh rules: <https://github.com/aliftype/raqim-kashida/blob/e95df2093348b7e361298b223e8f360c071fc57a/data/arabic-naskh.pat>
+- Rasm folding: <https://github.com/aliftype/raqim-kashida/blob/e95df2093348b7e361298b223e8f360c071fc57a/src/rasm.rs>
+- Regression fixtures: <https://github.com/aliftype/raqim-kashida/blob/e95df2093348b7e361298b223e8f360c071fc57a/src/tests.rs>
+- License: MIT
+
+### Copyright and permission notice
+
+Copyright © 2026 Khaled Hosny
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 ## Unicode Character Database
 
 The compact joining-property table in `src/joining.ts` is derived from `ArabicShaping-17.0.0.txt`, a normative contributory data file in the Unicode Character Database.

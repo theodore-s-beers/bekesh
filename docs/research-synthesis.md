@@ -93,11 +93,10 @@ The classic priority sequence favors, approximately:
 
 The implementation normally selects the highest-priority opportunity in each word and, for ties, prefers a point closer to the end of the word. It also contains explicit protection against lām–alif behavior. ([GitHub][7])
 
-This is worth retaining in the research archive as:
+This remains useful in the research archive as:
 
-- a very readable control implementation;
-- a fallback “simple Arabic” rule set;
-- a way to compare a fixed priority table with Raqim’s extensible patterns.
+- a readable historical control implementation; and
+- a baseline for comparing fixed priorities with Bekesh's stricter Naskh rules.
 
 `kashida-js` is Apache-2.0-licensed; the old HarfBuzz code uses permissive licensing. ([GitHub][8])
 
@@ -168,11 +167,11 @@ Bekesh separates candidate selection, width solving, and browser measurement. Fo
 1. waits for the requested CSS font and measures the clean source;
 2. finds connected candidates at grapheme boundaries with a Persian Naskh heuristic;
 3. inserts one U+0640 at a time and measures each full trial string;
-4. repeats the preferred fitting point in each word;
+4. repeats the preferred fitting point in each word, using a conservative Naskh pair matrix, joined-run length, positional letter families, and explicit suppressions;
 5. verifies the result against DOM layout and backs off if needed; and
 6. returns word spacing for the remaining width.
 
-The browser supplies shaping. HarfBuzz safety flags, font bytes, OpenType features, variable-font axes, and built-in style-selectable rule sets are not part of the current API. See the [README](../README.md) for its exact contract.
+The browser supplies shaping. HarfBuzz safety flags, font bytes, OpenType features, variable-font axes, and style-selectable rule sets are not part of the current API. Bekesh intentionally targets Persian text in Naskh-style fonts. See the [README](../README.md) for its exact contract.
 
 The output remains a **presentation artifact**, not canonical text. Literal tatweels affect search, comparison, copying, and indexing. Bekesh therefore preserves the clean source and reports inserted tatweels as reversible edits. ([University of Reading Research][15])
 

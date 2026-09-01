@@ -1,4 +1,5 @@
 import { persianNaskhCandidateEngine } from "./candidates.js";
+import { validateOptions } from "./options.js";
 import type {
   CandidateEngine,
   JustificationDiagnostic,
@@ -22,24 +23,6 @@ interface WordState {
   active: TatweelCandidate | undefined;
   exhausted: boolean;
   rejected: Set<number>;
-}
-
-function validate(options: JustifyOptions) {
-  if (!Number.isFinite(options.targetWidth) || options.targetWidth < 0) {
-    throw new RangeError("targetWidth must be a finite, nonnegative number");
-  }
-  if (!options.font.trim()) {
-    throw new TypeError("font must be a nonempty CSS font shorthand");
-  }
-  if (options.lang !== undefined && options.lang !== "ar" && options.lang !== "fa") {
-    throw new TypeError('lang must be either "ar" or "fa"');
-  }
-  if (
-    options.tolerance !== undefined &&
-    (!Number.isFinite(options.tolerance) || options.tolerance < 0)
-  ) {
-    throw new RangeError("tolerance must be a finite, nonnegative number");
-  }
 }
 
 function renderTrial(
@@ -88,7 +71,7 @@ export function fitWithKashida(
   measure: TextMeasurer,
   candidateEngine: CandidateEngine = persianNaskhCandidateEngine,
 ): JustificationResult {
-  validate(options);
+  validateOptions(options);
 
   const tolerance = options.tolerance ?? 0;
   const sourceWidth = measure(options.text, options.font);

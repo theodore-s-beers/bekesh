@@ -137,6 +137,18 @@ test("the convenience API reports its browser-only requirement", async () => {
   );
 });
 
+test("the convenience API validates before requiring a browser", async () => {
+  await assert.rejects(
+    justifyWithKashida({ text: "متن", targetWidth: -1, font: "20px serif" }),
+    RangeError,
+  );
+  await assert.rejects(justifyWithKashida({ text: "متن", targetWidth: 30, font: " " }), TypeError);
+  await assert.rejects(
+    justifyWithKashida({ text: "متن", targetWidth: 30, font: "20px serif", lang: "ur" }),
+    TypeError,
+  );
+});
+
 test("the DOM measurer reports its browser-only requirement", () => {
   assert.throws(() => measureDomText("متن", "20px serif"), /browser document/);
 });

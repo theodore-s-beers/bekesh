@@ -9,7 +9,7 @@ import type {
 
 let measurementContext: CanvasRenderingContext2D | undefined;
 let measurementFont: string | undefined;
-let domMeasurementElement: HTMLSpanElement | undefined;
+let domMeasurementNodes: { host: HTMLDivElement; element: HTMLSpanElement } | undefined;
 
 const MAXIMUM_DOM_REFITS = 128;
 const REFIT_EPSILON = 1e-6;
@@ -47,9 +47,20 @@ function domElement(): HTMLSpanElement {
     throw new Error("DOM text measurement requires a browser document");
   }
 
-  if (!domMeasurementElement) {
-    domMeasurementElement = document.createElement("span");
-    const style = domMeasurementElement.style;
+  if (!domMeasurementNodes) {
+    const host = document.createElement("div");
+    const hostStyle = host.style;
+    hostStyle.setProperty("all", "initial", "important");
+    hostStyle.setProperty("position", "fixed", "important");
+    hostStyle.setProperty("inset", "0 auto auto 0", "important");
+    hostStyle.setProperty("display", "block", "important");
+    hostStyle.setProperty("visibility", "hidden", "important");
+    hostStyle.setProperty("pointer-events", "none", "important");
+    host.setAttribute("aria-hidden", "true");
+
+    const element = document.createElement("span");
+    const style = element.style;
+    style.all = "initial";
     style.position = "fixed";
     style.inset = "0 auto auto 0";
     style.display = "inline-block";
@@ -60,14 +71,16 @@ function domElement(): HTMLSpanElement {
     style.border = "0";
     style.direction = "rtl";
     style.whiteSpace = "pre";
-    domMeasurementElement.setAttribute("aria-hidden", "true");
+    element.setAttribute("aria-hidden", "true");
+    host.attachShadow({ mode: "closed" }).append(element);
+    domMeasurementNodes = { host, element };
   }
-  if (!domMeasurementElement.isConnected) {
+  if (!domMeasurementNodes.host.isConnected) {
     const root = document.body ?? document.documentElement;
-    root.append(domMeasurementElement);
+    root.append(domMeasurementNodes.host);
   }
 
-  return domMeasurementElement;
+  return domMeasurementNodes.element;
 }
 
 function measureDomTextWithWordSpacing(text: string, font: string, wordSpacing: number): number {

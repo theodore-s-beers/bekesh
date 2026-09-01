@@ -18,18 +18,21 @@ const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(dirname, "..");
 const require = createRequire(import.meta.url);
 
-const texts = [
-  "به نام خداوند جان و خرد",
-  "کزین برتر اندیشه برنگذرد",
-  "خداوند نام و خداوند جای",
-  "خداوند روزی ده رهنمای",
-  "می‌دانم که ایران سرای من است",
-  "توانا بود هر که دانا بود",
-  "ز دانش دل پیر برنا بود",
-  "چو ایران نباشد تن من مباد",
-  "بدین بوم و بر زنده یک تن مباد",
-  "همه سر به سر تن به کشتن دهیم",
-  "از آن به که کشور به دشمن دهیم",
+const samples = [
+  { lang: "fa", text: "به نام خداوند جان و خرد" },
+  { lang: "fa", text: "کزین برتر اندیشه برنگذرد" },
+  { lang: "fa", text: "خداوند نام و خداوند جای" },
+  { lang: "fa", text: "خداوند روزی ده رهنمای" },
+  { lang: "fa", text: "می‌دانم که ایران سرای من است" },
+  { lang: "fa", text: "توانا بود هر که دانا بود" },
+  { lang: "fa", text: "ز دانش دل پیر برنا بود" },
+  { lang: "fa", text: "چو ایران نباشد تن من مباد" },
+  { lang: "fa", text: "بدین بوم و بر زنده یک تن مباد" },
+  { lang: "fa", text: "همه سر به سر تن به کشتن دهیم" },
+  { lang: "fa", text: "از آن به که کشور به دشمن دهیم" },
+  { lang: "ar", text: "قِفا نَبكِ مِن ذِكرى حَبيبٍ وَمَنزِلِ" },
+  { lang: "ar", text: "على قدر أهل العزم تأتي العزائم" },
+  { lang: "ar", text: "إذا غامرت في شرف مروم" },
 ];
 const fontSizes = [16, 16.1, 20, 22.3, 29.1];
 
@@ -156,7 +159,7 @@ async function runBrowser(browserName, browserType, origin) {
       rows: report,
       tatweelSubsetRequested,
     } = await page.evaluate(
-      async ({ browserName, fontSizes, origin, targetWidth, texts }) => {
+      async ({ browserName, fontSizes, origin, samples, targetWidth }) => {
         const { justifyWithKashida, measureDomText } = await import(`${origin}/dist/index.js`);
         await justifyWithKashida({
           text: "سلام",
@@ -184,6 +187,7 @@ async function runBrowser(browserName, browserType, origin) {
         const widthWithHostileCssAtCreation = measureDomText(isolationText, isolationFont);
         hostileStyle.remove();
         const widthWithoutHostileCss = measureDomText(isolationText, isolationFont);
+        const explicitPersianWidth = measureDomText(isolationText, isolationFont, "fa");
         document.head.append(hostileStyle);
         const widthWithHostileCssAfterCreation = measureDomText(isolationText, isolationFont);
         hostileStyle.remove();
@@ -191,19 +195,21 @@ async function runBrowser(browserName, browserType, origin) {
 
         for (const fontSize of fontSizes) {
           const font = `${fontSize}px "Scheherazade Test"`;
-          await document.fonts.load(font, texts.join(""));
+          await document.fonts.load(font, samples.map(({ text }) => text).join(""));
 
-          for (const text of texts) {
-            const sourceWidth = measureDomText(text, font);
+          for (const { lang, text } of samples) {
+            const sourceWidth = measureDomText(text, font, lang);
             const sourceReference = document.createElement("span");
+            sourceReference.lang = lang;
             sourceReference.style.cssText = `position:absolute;display:inline-block;white-space:pre;direction:rtl;font:${font};word-spacing:0`;
             sourceReference.textContent = text;
             document.body.append(sourceReference);
             const sourceReferenceWidth = sourceReference.getBoundingClientRect().width;
             sourceReference.remove();
 
-            const result = await justifyWithKashida({ text, targetWidth, font });
+            const result = await justifyWithKashida({ text, targetWidth, font, lang });
             const span = document.createElement("span");
+            span.lang = lang;
             span.style.cssText = `position:absolute;display:inline-block;white-space:pre;direction:rtl;font:${font};word-spacing:${result.wordSpacing}px`;
             span.textContent = result.displayText;
             document.body.append(span);
@@ -211,6 +217,7 @@ async function runBrowser(browserName, browserType, origin) {
             span.remove();
 
             const zeroSpacing = document.createElement("span");
+            zeroSpacing.lang = lang;
             zeroSpacing.style.cssText = `position:absolute;display:inline-block;white-space:pre;direction:rtl;font:${font};word-spacing:0`;
             zeroSpacing.textContent = result.displayText;
             document.body.append(zeroSpacing);
@@ -218,6 +225,7 @@ async function runBrowser(browserName, browserType, origin) {
             zeroSpacing.remove();
 
             const container = document.createElement("div");
+            container.lang = lang;
             container.style.cssText = `position:absolute;width:${targetWidth}px;direction:rtl;font:${font};line-height:1.5;word-spacing:${result.wordSpacing}px`;
             container.textContent = result.displayText;
             document.body.append(container);
@@ -231,6 +239,7 @@ async function runBrowser(browserName, browserType, origin) {
             rows.push({
               browserName,
               fontSize,
+              lang,
               text,
               sourceWidth,
               sourceReferenceWidth,
@@ -246,18 +255,23 @@ async function runBrowser(browserName, browserType, origin) {
             widthWithHostileCssAtCreation,
             widthWithoutHostileCss,
             widthWithHostileCssAfterCreation,
+            explicitPersianWidth,
           },
           tatweelSubsetRequested,
           rows,
         };
       },
-      { browserName, fontSizes, origin, targetWidth: TARGET_WIDTH, texts },
+      { browserName, fontSizes, origin, samples, targetWidth: TARGET_WIDTH },
     );
 
     assert.ok(
       Math.abs(cssIsolation.widthWithHostileCssAtCreation - cssIsolation.widthWithoutHostileCss) <
         0.001,
       `${browserName} allowed pre-existing page CSS to alter DOM measurement`,
+    );
+    assert.ok(
+      Math.abs(cssIsolation.explicitPersianWidth - cssIsolation.widthWithoutHostileCss) < 0.001,
+      `${browserName} did not default DOM measurement to Persian`,
     );
     assert.ok(
       Math.abs(

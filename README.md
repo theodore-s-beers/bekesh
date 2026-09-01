@@ -1,6 +1,6 @@
 # Bekesh
 
-Bekesh is an opinionated ESM-only browser library that fits a line of Persian text set in a Naskh-style font to a target width. It inserts U+0640 ARABIC TATWEEL at contextually appropriate elongation points, then returns CSS word spacing for the remaining width.
+Bekesh is an opinionated ESM-only browser library that fits a line of Persian or classical Arabic text set in a Naskh-style font to a target width. It inserts U+0640 ARABIC TATWEEL at contextually appropriate elongation points, then returns CSS word spacing for the remaining width.
 
 Bekesh measures the requested font in the browser and verifies its result against DOM layout. Its candidate rules use letter families, positional forms, joined-run length, and explicit Naskh prohibitions. If a word has no suitable elongation point, Bekesh leaves that width to word spacing instead of using an arbitrary connection.
 
@@ -19,20 +19,23 @@ import { justifyWithKashida } from "bekesh";
 
 const sourceText = "توانا بود هر که دانا بود";
 const font = '32px "Scheherazade New"';
+const lang = "fa";
 const result = await justifyWithKashida({
   text: sourceText,
   targetWidth: 420,
   font,
+  lang,
 });
 
 element.textContent = result.displayText;
+element.lang = lang;
 element.style.font = font;
 element.style.wordSpacing = `${result.wordSpacing}px`;
 element.style.direction = "rtl";
 element.style.whiteSpace = "pre";
 ```
 
-Pass clean source text on every call. `displayText` contains presentation characters and should not replace the original text in application state. `targetWidth` is a CSS-pixel content width. Render with the same font and RTL direction used for measurement. `white-space: pre` preserves spaces and keeps the text on one line.
+Pass clean source text on every call. `displayText` contains presentation characters and should not replace the original text in application state. `targetWidth` is a CSS-pixel content width. Render with the same language, font, and RTL direction used for measurement. `white-space: pre` preserves spaces and keeps the text on one line.
 
 An existing bare U+0640 is treated as an author-selected elongation point and receives the highest candidate priority. A tatweel carrying a combining mark remains a mark seat and is not treated as that signal.
 
@@ -49,6 +52,7 @@ function justifyWithKashida(options: JustifyOptions): Promise<JustificationResul
 - `text`: clean source text; it is not mutated or normalized.
 - `targetWidth`: desired inline width in CSS pixels.
 - `font`: a valid CSS `font` shorthand, including the font size.
+- `lang`: optional shaping language, `"fa"` or `"ar"`; defaults to `"fa"`.
 - `tolerance`: optional permitted overshoot in CSS pixels; defaults to zero.
 
 The result includes the source and display strings, measured widths, width remaining after tatweels, per-space `wordSpacing`, inserted tatweel edits, and diagnostic strings. If the clean source already exceeds the target, Bekesh returns it unchanged with the `source-overflows-target` diagnostic.
@@ -61,20 +65,20 @@ The result includes the source and display strings, measured widths, width remai
 - `dom-verification-adjusted`: DOM verification reduced the Canvas-selected tatweels or word spacing.
 - `dom-verification-fallback`: bounded DOM refitting could not find a verified edited result, so the fitting step fell back to clean source text.
 
-The package also exports `measureDomText(text, font)` for synchronous DOM measurement, plus the `JustifyOptions`, `JustificationResult`, `JustificationDiagnostic`, and `TatweelEdit` TypeScript types. `measureDomText()` does not load fonts; wait for the relevant face before calling it when the font may not be ready:
+The package also exports `measureDomText(text, font, lang?)` for synchronous DOM measurement, plus the `JustifyOptions`, `JustificationResult`, `JustificationDiagnostic`, and `TatweelEdit` TypeScript types. Its language defaults to `"fa"`. `measureDomText()` does not load fonts; wait for the relevant face before calling it when the font may not be ready:
 
 ```ts
 await document.fonts.load(font, text);
-const width = measureDomText(text, font);
+const width = measureDomText(text, font, "ar");
 ```
 
 ## Browser and layout requirements
 
 Bekesh requires a modern browser with ES modules, the DOM, Canvas 2D, `document.fonts`, and `Intl.Segmenter` support. It has no runtime dependencies.
 
-Measurement currently models the CSS `font` shorthand, direction, and returned word spacing. Font features, variation settings, language, letter spacing, transforms, fallback selection, and other shaping inputs are not API options. If those differ between measurement and rendering, the final element can have a different width. Padding and borders are likewise outside `targetWidth`.
+Measurement currently models the CSS `font` shorthand, the selected language, RTL direction, and returned word spacing. Font features, variation settings, letter spacing, transforms, fallback selection, and other shaping inputs are not API options. If those differ between measurement and rendering, the final element can have a different width. Padding and borders are likewise outside `targetWidth`.
 
-Bekesh fits one line at a time. It does not break paragraphs into lines, shrink overlong source text, or implement calligraphic glyph elongation. The browser handles bidi, shaping, and font fallback; Bekesh does not configure them. Its rules are designed for Persian text in Naskh-style fonts, not as a universal Arabic-script justification model. Candidate choice remains heuristic, so review it with the fonts and texts the application supports.
+Bekesh fits one line at a time. It does not break paragraphs into lines, shrink overlong source text, or implement calligraphic glyph elongation. Bekesh sets the measurement language to Persian or Arabic and the direction to RTL; the browser handles bidi, shaping, and font fallback. Its rules are designed for Persian and classical Arabic text in Naskh-style fonts, not as a universal Arabic-script justification model. Candidate choice remains heuristic, so review it with the fonts and texts the application supports.
 
 ## Research and prior art
 

@@ -28,6 +28,6 @@ The example justifier is deliberately monospaced. It keeps the highest-ranked po
 
 ## Lessons for Bekesh
 
-Bekesh directly implements the parts of Raqim's Naskh model needed for Persian text: Unicode joining groups, positional rasm folding, joined runs, length-sensitive matrix priorities, and explicit suppressions. It does not include Raqim's pattern language or its other style rules. Bekesh also preserves rule IDs in its results even though Raqim's public point contains only index and priority.
+Bekesh directly implements the parts of Raqim's Naskh model needed for Persian and Arabic text: Unicode joining groups, positional rasm folding, joined runs, length-sensitive matrix priorities, and explicit suppressions. It does not include Raqim's pattern language or its other style rules. Bekesh also preserves rule IDs in its results even though Raqim's public point contains only index and priority.
 
 Do not conflate a Naskh-rule candidate with permission from a particular font. A future shaping-aware backend should still apply a font-level safety check before actual-width evaluation.

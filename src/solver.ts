@@ -31,6 +31,9 @@ function validate(options: JustifyOptions) {
   if (!options.font.trim()) {
     throw new TypeError("font must be a nonempty CSS font shorthand");
   }
+  if (options.lang !== undefined && options.lang !== "ar" && options.lang !== "fa") {
+    throw new TypeError('lang must be either "ar" or "fa"');
+  }
   if (
     options.tolerance !== undefined &&
     (!Number.isFinite(options.tolerance) || options.tolerance < 0)

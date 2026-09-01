@@ -7,39 +7,66 @@ import type {
 } from "./types.js";
 
 let measurementContext: CanvasRenderingContext2D | undefined;
+let measurementCanvas: HTMLCanvasElement | undefined;
 let measurementFont: string | undefined;
+let measurementLanguage: MeasurementLanguage | undefined;
 let domMeasurementNodes: { host: HTMLDivElement; element: HTMLSpanElement } | undefined;
 
+type MeasurementLanguage = NonNullable<JustifyOptions["lang"]>;
+
+const DEFAULT_LANGUAGE: MeasurementLanguage = "fa";
 const MAXIMUM_DOM_REFITS = 128;
 const REFIT_EPSILON = 1e-6;
 const WORD_SPACING_SEARCH_STEPS = 32;
 const WORD_SPACING_EPSILON = 1e-6;
 
-function canvasContext(): CanvasRenderingContext2D {
+function languageOrDefault(lang: JustifyOptions["lang"]): MeasurementLanguage {
+  if (lang === undefined) return DEFAULT_LANGUAGE;
+  if (lang === "ar" || lang === "fa") return lang;
+  throw new TypeError('lang must be either "ar" or "fa"');
+}
+
+function canvasContext(language: MeasurementLanguage): CanvasRenderingContext2D {
   if (typeof document === "undefined") {
     throw new Error("justifyWithKashida requires a browser document");
   }
 
   if (!measurementContext) {
-    measurementContext = document.createElement("canvas").getContext("2d") ?? undefined;
+    const canvas = document.createElement("canvas");
+    canvas.lang = language;
+    measurementCanvas = canvas;
+    measurementContext = canvas.getContext("2d") ?? undefined;
     if (measurementContext) {
       measurementContext.direction = "rtl";
+      if ("lang" in measurementContext) {
+        measurementContext.lang = language;
+      }
+      measurementLanguage = language;
     }
   }
-  if (!measurementContext) {
+  if (!measurementContext || !measurementCanvas) {
     throw new Error("A 2D canvas context is unavailable");
+  }
+  if (measurementLanguage !== language) {
+    measurementCanvas.lang = language;
+    if ("lang" in measurementContext) {
+      measurementContext.lang = language;
+    }
+    measurementLanguage = language;
   }
   return measurementContext;
 }
 
-const canvasTextMeasurer: TextMeasurer = (text, font) => {
-  const context = canvasContext();
-  if (measurementFont !== font) {
-    context.font = font;
-    measurementFont = font;
-  }
-  return context.measureText(text).width;
-};
+function canvasTextMeasurer(language: MeasurementLanguage): TextMeasurer {
+  const context = canvasContext(language);
+  return (text, font) => {
+    if (measurementFont !== font) {
+      context.font = font;
+      measurementFont = font;
+    }
+    return context.measureText(text).width;
+  };
+}
 
 function domElement(): HTMLSpanElement {
   if (typeof document === "undefined") {
@@ -70,6 +97,7 @@ function domElement(): HTMLSpanElement {
     style.border = "0";
     style.direction = "rtl";
     style.whiteSpace = "pre";
+    element.lang = DEFAULT_LANGUAGE;
     element.setAttribute("aria-hidden", "true");
     host.attachShadow({ mode: "closed" }).append(element);
     domMeasurementNodes = { host, element };
@@ -82,16 +110,28 @@ function domElement(): HTMLSpanElement {
   return domMeasurementNodes.element;
 }
 
-function measureDomTextWithWordSpacing(text: string, font: string, wordSpacing: number): number {
+function measureDomTextWithWordSpacing(
+  text: string,
+  font: string,
+  wordSpacing: number,
+  language: MeasurementLanguage,
+): number {
   const element = domElement();
+  if (element.lang !== language) {
+    element.lang = language;
+  }
   element.style.font = font;
   element.style.wordSpacing = `${wordSpacing}px`;
   element.textContent = text;
   return element.getBoundingClientRect().width;
 }
 
-export function measureDomText(text: string, font: string): number {
-  return measureDomTextWithWordSpacing(text, font, 0);
+export function measureDomText(
+  text: string,
+  font: string,
+  lang: JustifyOptions["lang"] = DEFAULT_LANGUAGE,
+): number {
+  return measureDomTextWithWordSpacing(text, font, 0, languageOrDefault(lang));
 }
 
 function uniqueDiagnostics(
@@ -103,6 +143,7 @@ function uniqueDiagnostics(
 function browserResult(
   result: JustificationResult,
   options: JustifyOptions,
+  language: MeasurementLanguage,
   sourceWidth: number,
   measuredWidth: number,
   domAdjusted: boolean,
@@ -118,6 +159,7 @@ function browserResult(
       result.displayText,
       options.font,
       wordSpacing,
+      language,
     );
     if (spacedWidth > permittedWidth) {
       spacingAdjusted = true;
@@ -130,7 +172,7 @@ function browserResult(
       );
 
       if (
-        measureDomTextWithWordSpacing(result.displayText, options.font, wordSpacing) >
+        measureDomTextWithWordSpacing(result.displayText, options.font, wordSpacing, language) >
         permittedWidth
       ) {
         let safe = 0;
@@ -138,7 +180,7 @@ function browserResult(
         for (let step = 0; step < WORD_SPACING_SEARCH_STEPS; step += 1) {
           const middle = (safe + unsafe) / 2;
           if (
-            measureDomTextWithWordSpacing(result.displayText, options.font, middle) <=
+            measureDomTextWithWordSpacing(result.displayText, options.font, middle, language) <=
             permittedWidth
           ) {
             safe = middle;
@@ -177,11 +219,13 @@ export async function justifyWithKashida(options: JustifyOptions): Promise<Justi
   if (typeof document === "undefined") {
     throw new Error("justifyWithKashida requires a browser document");
   }
+  const language = languageOrDefault(options.lang);
   await document.fonts.load(options.font, `${options.text}\u0640`);
 
   const tolerance = options.tolerance ?? 0;
-  const sourceWidth = measureDomText(options.text, options.font);
-  let result = fitWithKashida(options, canvasTextMeasurer);
+  const sourceWidth = measureDomText(options.text, options.font, language);
+  const measure = canvasTextMeasurer(language);
+  let result = fitWithKashida(options, measure);
 
   if (sourceWidth > options.targetWidth + tolerance) {
     return {
@@ -200,9 +244,9 @@ export async function justifyWithKashida(options: JustifyOptions): Promise<Justi
   let internalTarget = options.targetWidth;
   let domAdjusted = false;
   for (let attempt = 0; attempt < MAXIMUM_DOM_REFITS; attempt += 1) {
-    const domWidth = measureDomText(result.displayText, options.font);
+    const domWidth = measureDomText(result.displayText, options.font, language);
     if (domWidth <= options.targetWidth + tolerance) {
-      return browserResult(result, options, sourceWidth, domWidth, domAdjusted);
+      return browserResult(result, options, language, sourceWidth, domWidth, domAdjusted);
     }
 
     domAdjusted = true;
@@ -213,10 +257,7 @@ export async function justifyWithKashida(options: JustifyOptions): Promise<Justi
         result.measuredWidth - REFIT_EPSILON,
       ),
     );
-    result = fitWithKashida(
-      { ...options, targetWidth: internalTarget, tolerance: 0 },
-      canvasTextMeasurer,
-    );
+    result = fitWithKashida({ ...options, targetWidth: internalTarget, tolerance: 0 }, measure);
   }
 
   // The clean source was already verified to fit, so it is a safe final
@@ -225,13 +266,14 @@ export async function justifyWithKashida(options: JustifyOptions): Promise<Justi
     {
       ...result,
       displayText: options.text,
-      measuredWidth: canvasTextMeasurer(options.text, options.font),
+      measuredWidth: measure(options.text, options.font),
       edits: [],
       diagnostics: [...result.diagnostics, "dom-verification-fallback"],
     },
     options,
+    language,
     sourceWidth,
-    measureDomText(options.text, options.font),
+    measureDomText(options.text, options.font, language),
     true,
   );
 }

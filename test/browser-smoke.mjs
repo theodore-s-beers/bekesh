@@ -13,6 +13,7 @@ const FONT_URL =
   "https://raw.githubusercontent.com/google/fonts/831b58ab22a076d54104f7a71fa6f00bd956fc50/ofl/scheherazadenew/ScheherazadeNew-Regular.ttf";
 const FONT_SHA256 = "794bac8dc9e83d1d620bc471ea694f5f31d0965ce8006490a79dfc51a2d283b3";
 const TARGET_WIDTH = 256;
+const FILL_EPSILON = 0.125;
 const dirname = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(dirname, "..");
 const require = createRequire(import.meta.url);
@@ -301,6 +302,10 @@ async function runBrowser(browserName, browserType, origin) {
       assert.ok(
         row.renderedWidth <= TARGET_WIDTH,
         `${browserName} overflowed by ${row.renderedWidth - TARGET_WIDTH}px at ${row.fontSize}px: ${row.text}`,
+      );
+      assert.ok(
+        TARGET_WIDTH - row.renderedWidth <= FILL_EPSILON,
+        `${browserName} underfilled by ${TARGET_WIDTH - row.renderedWidth}px at ${row.fontSize}px: ${row.text}`,
       );
       assert.equal(
         row.lineCount,

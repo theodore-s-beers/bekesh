@@ -1,4 +1,4 @@
-import { persianNaskhCandidateEngine } from "./candidates.js";
+import { naskhCandidateEngine } from "./candidates.js";
 import { validateOptions } from "./options.js";
 import type {
   CandidateEngine,
@@ -69,7 +69,7 @@ function adjustableSpaceCount(text: string) {
 export function fitWithKashida(
   options: JustifyOptions,
   measure: TextMeasurer,
-  candidateEngine: CandidateEngine = persianNaskhCandidateEngine,
+  candidateEngine: CandidateEngine = naskhCandidateEngine,
 ): JustificationResult {
   validateOptions(options);
 

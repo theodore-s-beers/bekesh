@@ -1,11 +1,12 @@
 {
   "name": "bekesh",
   "version": "0.1.2",
-  "description": "Browser-first Persian kashida justification",
+  "description": "Browser-first Persian and Arabic kashida justification",
   "keywords": [
     "arabic",
     "justification",
     "kashida",
+    "naskh",
     "persian",
     "typography"
   ],

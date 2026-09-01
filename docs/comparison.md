@@ -46,5 +46,5 @@ clean source run
 1. Verify the meaning and location of HarfBuzz's safe flag in an RTL glyph stream, especially around combining marks and ligatures.
 2. Compare UTF-16, code-point, grapheme, and HarfBuzz cluster indices for the starter corpus.
 3. Measure one and repeated U+0640 insertions at the same connection in Scheherazade New and at least one additional Naskh font.
-4. Compare Bekesh's Naskh candidates against Raqim across an expanded Persian corpus.
+4. Compare Bekesh's Naskh candidates against Raqim across expanded Persian and Arabic corpora.
 5. Reproduce Qt's priority allocation on a small, independently implemented model, then compare it with a bounded search.

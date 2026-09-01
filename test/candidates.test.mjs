@@ -1,10 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { findPersianNaskhCandidates } from "../dist/candidates.js";
+import { findNaskhCandidates } from "../dist/candidates.js";
 
 const points = (text) =>
-  findPersianNaskhCandidates(text).map(({ utf16Index, priority, ruleId, wordIndex }) => ({
+  findNaskhCandidates(text).map(({ utf16Index, priority, ruleId, wordIndex }) => ({
     utf16Index,
     priority,
     ruleId,

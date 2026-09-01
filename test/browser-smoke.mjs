@@ -147,9 +147,30 @@ async function runBrowser(browserName, browserType, origin) {
   try {
     const page = await browser.newPage();
     await page.goto(origin);
-    const report = await page.evaluate(
+    const { cssIsolation, rows: report } = await page.evaluate(
       async ({ browserName, fontSizes, origin, targetWidth, texts }) => {
         const { justifyWithKashida, measureDomText } = await import(`${origin}/dist/index.js`);
+        const isolationFont = '20px "Scheherazade Test"';
+        const isolationText = "سلام";
+        await document.fonts.load(isolationFont, isolationText);
+        const hostileStyle = document.createElement("style");
+        hostileStyle.textContent = `
+          span,
+          body > div {
+            font: 80px serif !important;
+            font-feature-settings: "kern" 0 !important;
+            letter-spacing: 17px !important;
+            transform: scaleX(2) !important;
+            zoom: 2 !important;
+          }
+        `;
+        document.head.append(hostileStyle);
+        const widthWithHostileCssAtCreation = measureDomText(isolationText, isolationFont);
+        hostileStyle.remove();
+        const widthWithoutHostileCss = measureDomText(isolationText, isolationFont);
+        document.head.append(hostileStyle);
+        const widthWithHostileCssAfterCreation = measureDomText(isolationText, isolationFont);
+        hostileStyle.remove();
         const rows = [];
 
         for (const fontSize of fontSizes) {
@@ -204,9 +225,28 @@ async function runBrowser(browserName, browserType, origin) {
             });
           }
         }
-        return rows;
+        return {
+          cssIsolation: {
+            widthWithHostileCssAtCreation,
+            widthWithoutHostileCss,
+            widthWithHostileCssAfterCreation,
+          },
+          rows,
+        };
       },
       { browserName, fontSizes, origin, targetWidth: TARGET_WIDTH, texts },
+    );
+
+    assert.ok(
+      Math.abs(cssIsolation.widthWithHostileCssAtCreation - cssIsolation.widthWithoutHostileCss) <
+        0.001,
+      `${browserName} allowed pre-existing page CSS to alter DOM measurement`,
+    );
+    assert.ok(
+      Math.abs(
+        cssIsolation.widthWithHostileCssAfterCreation - cssIsolation.widthWithoutHostileCss,
+      ) < 0.001,
+      `${browserName} allowed later page CSS to alter DOM measurement`,
     );
 
     let fitted = 0;

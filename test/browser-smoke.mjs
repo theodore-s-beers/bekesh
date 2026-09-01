@@ -174,6 +174,12 @@ async function runBrowser(browserName, browserType, origin) {
         await document.fonts.load(isolationFont, isolationText);
         const hostileStyle = document.createElement("style");
         hostileStyle.textContent = `
+          html,
+          body {
+            transform: scaleX(2) !important;
+            transform-origin: 0 0 !important;
+          }
+
           span,
           body > div {
             font: 80px serif !important;

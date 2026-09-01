@@ -123,7 +123,9 @@ function measureDomTextWithWordSpacing(
   element.style.font = font;
   element.style.wordSpacing = `${wordSpacing}px`;
   element.textContent = text;
-  return element.getBoundingClientRect().width;
+  // A DOMRect includes ancestor transforms; resolved width remains in the
+  // element's layout coordinate space, matching targetWidth.
+  return Number.parseFloat(getComputedStyle(element).width);
 }
 
 export function measureDomText(

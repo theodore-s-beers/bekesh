@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { fitWithKashida, justifyWithKashida, measureDomText } from "../dist/index.js";
+import { justifyWithKashida, measureDomText } from "../dist/browser.js";
+import { fitWithKashida } from "../dist/solver.js";
 
 const additiveMeasurer = (text) =>
   [...text].reduce((width, character) => {

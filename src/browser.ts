@@ -1,6 +1,5 @@
 import { fitWithKashida } from "./solver.js";
 import type {
-  CandidateEngine,
   JustificationDiagnostic,
   JustificationResult,
   JustifyOptions,
@@ -33,7 +32,7 @@ function canvasContext(): CanvasRenderingContext2D {
   return measurementContext;
 }
 
-export const canvasTextMeasurer: TextMeasurer = (text, font) => {
+const canvasTextMeasurer: TextMeasurer = (text, font) => {
   const context = canvasContext();
   if (measurementFont !== font) {
     context.font = font;
@@ -174,10 +173,7 @@ function browserResult(
   };
 }
 
-export async function justifyWithKashida(
-  options: JustifyOptions,
-  candidateEngine?: CandidateEngine,
-): Promise<JustificationResult> {
+export async function justifyWithKashida(options: JustifyOptions): Promise<JustificationResult> {
   if (typeof document === "undefined") {
     throw new Error("justifyWithKashida requires a browser document");
   }
@@ -185,7 +181,7 @@ export async function justifyWithKashida(
 
   const tolerance = options.tolerance ?? 0;
   const sourceWidth = measureDomText(options.text, options.font);
-  let result = fitWithKashida(options, canvasTextMeasurer, candidateEngine);
+  let result = fitWithKashida(options, canvasTextMeasurer);
 
   if (sourceWidth > options.targetWidth + tolerance) {
     return {
@@ -220,7 +216,6 @@ export async function justifyWithKashida(
     result = fitWithKashida(
       { ...options, targetWidth: internalTarget, tolerance: 0 },
       canvasTextMeasurer,
-      candidateEngine,
     );
   }
 

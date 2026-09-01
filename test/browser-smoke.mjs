@@ -102,12 +102,15 @@ function startServer(fontPath) {
     const pathname = new URL(request.url, "http://localhost").pathname;
     if (pathname === "/") {
       response.setHeader("content-type", "text/html; charset=utf-8");
-      response.end(
-        '<style>@font-face{font-family:"Scheherazade Test";src:url(/font.ttf)}body{margin:0}</style>',
-      );
+      response.end(`<style>
+        @font-face{font-family:"Scheherazade Test";src:url(/font.ttf)}
+        @font-face{font-family:"Scheherazade Split";src:url(/font-base.ttf);unicode-range:U+0000-063F,U+0641-10FFFF}
+        @font-face{font-family:"Scheherazade Split";src:url(/font-tatweel.ttf);unicode-range:U+0640}
+        body{margin:0}
+      </style>`);
       return;
     }
-    if (pathname === "/font.ttf") {
+    if (["/font.ttf", "/font-base.ttf", "/font-tatweel.ttf"].includes(pathname)) {
       response.setHeader("content-type", "font/ttf");
       createReadStream(fontPath).pipe(response);
       return;
@@ -147,9 +150,21 @@ async function runBrowser(browserName, browserType, origin) {
   try {
     const page = await browser.newPage();
     await page.goto(origin);
-    const { cssIsolation, rows: report } = await page.evaluate(
+    const {
+      cssIsolation,
+      rows: report,
+      tatweelSubsetRequested,
+    } = await page.evaluate(
       async ({ browserName, fontSizes, origin, targetWidth, texts }) => {
         const { justifyWithKashida, measureDomText } = await import(`${origin}/dist/index.js`);
+        await justifyWithKashida({
+          text: "سلام",
+          targetWidth: 1,
+          font: '20px "Scheherazade Split"',
+        });
+        const tatweelSubsetRequested = performance
+          .getEntriesByType("resource")
+          .some((entry) => new URL(entry.name).pathname === "/font-tatweel.ttf");
         const isolationFont = '20px "Scheherazade Test"';
         const isolationText = "سلام";
         await document.fonts.load(isolationFont, isolationText);
@@ -231,6 +246,7 @@ async function runBrowser(browserName, browserType, origin) {
             widthWithoutHostileCss,
             widthWithHostileCssAfterCreation,
           },
+          tatweelSubsetRequested,
           rows,
         };
       },
@@ -247,6 +263,10 @@ async function runBrowser(browserName, browserType, origin) {
         cssIsolation.widthWithHostileCssAfterCreation - cssIsolation.widthWithoutHostileCss,
       ) < 0.001,
       `${browserName} allowed later page CSS to alter DOM measurement`,
+    );
+    assert.ok(
+      tatweelSubsetRequested,
+      `${browserName} did not load the unicode-range subset containing U+0640`,
     );
 
     let fitted = 0;

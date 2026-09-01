@@ -181,7 +181,7 @@ export async function justifyWithKashida(
   if (typeof document === "undefined") {
     throw new Error("justifyWithKashida requires a browser document");
   }
-  await document.fonts.load(options.font, options.text);
+  await document.fonts.load(options.font, `${options.text}\u0640`);
 
   const tolerance = options.tolerance ?? 0;
   const sourceWidth = measureDomText(options.text, options.font);

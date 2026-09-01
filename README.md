@@ -41,10 +41,7 @@ An existing bare U+0640 is treated as an author-selected elongation point and re
 ## API
 
 ```ts
-function justifyWithKashida(
-  options: JustifyOptions,
-  candidateEngine?: CandidateEngine,
-): Promise<JustificationResult>;
+function justifyWithKashida(options: JustifyOptions): Promise<JustificationResult>;
 ```
 
 `JustifyOptions` contains:
@@ -64,19 +61,11 @@ The result includes the source and display strings, measured widths, width remai
 - `dom-verification-adjusted`: DOM verification reduced the Canvas-selected tatweels or word spacing.
 - `dom-verification-fallback`: bounded DOM refitting could not find a verified edited result, so the fitting step fell back to clean source text.
 
-The package also exports:
-
-- `measureDomText(text, font)` for a string's natural DOM-rendered width.
-- `fitWithKashida()` for deterministic use with an injected text measurer.
-- `findPersianNaskhCandidates()` and `persianNaskhCandidateEngine`.
-- `canvasTextMeasurer`.
-- TypeScript types for options, results, candidates, edits, engines, and measurers, including `JustificationDiagnostic`.
-
-`measureDomText()` is synchronous and does not load fonts. Wait for the font before measuring when it may not be ready:
+The package also exports `measureDomText(text, font)` for synchronous DOM measurement, plus the `JustifyOptions`, `JustificationResult`, `JustificationDiagnostic`, and `TatweelEdit` TypeScript types. `measureDomText()` does not load fonts; wait for the relevant face before calling it when the font may not be ready:
 
 ```ts
-await document.fonts.load(font, sourceText);
-const sourceWidth = measureDomText(sourceText, font);
+await document.fonts.load(font, text);
+const width = measureDomText(text, font);
 ```
 
 ## Browser and layout requirements

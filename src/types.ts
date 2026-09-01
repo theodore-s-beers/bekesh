@@ -5,6 +5,8 @@ export interface JustifyOptions {
   targetWidth: number;
   /** A valid CSS font shorthand, including its size. */
   font: string;
+  /** Shaping language. Defaults to Persian. */
+  lang?: "ar" | "fa";
   /** Permitted measurement overshoot in CSS pixels. Defaults to zero. */
   tolerance?: number;
 }

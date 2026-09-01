@@ -25,4 +25,4 @@ The numeric values in the code increase down this list, but insertion sorts asce
 
 ## Lessons for Bekesh
 
-This fixed heuristic is a useful baseline for comparison. Bekesh's default engine is independently implemented and focused on Persian Naskh. Its API uses higher numbers for better candidates, the opposite of this source's sorted numeric order.
+This fixed heuristic is a useful baseline for comparison. Bekesh's default engine is independently implemented and focused on Persian and Arabic Naskh. Its API uses higher numbers for better candidates, the opposite of this source's sorted numeric order.

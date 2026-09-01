@@ -165,13 +165,13 @@ These reports can become independently written test fixtures.
 Bekesh separates candidate selection, width solving, and browser measurement. For one line of text it:
 
 1. waits for the requested CSS font and measures the clean source;
-2. finds connected candidates at grapheme boundaries with a Persian Naskh heuristic;
+2. finds connected candidates at grapheme boundaries with a Persian and Arabic Naskh heuristic;
 3. inserts one U+0640 at a time and measures each full trial string;
 4. repeats the preferred fitting point in each word, using a conservative Naskh pair matrix, joined-run length, positional letter families, and explicit suppressions;
 5. verifies the result against DOM layout and backs off if needed; and
 6. returns word spacing for the remaining width.
 
-The browser supplies shaping. HarfBuzz safety flags, font bytes, OpenType features, variable-font axes, and style-selectable rule sets are not part of the current API. Bekesh intentionally targets Persian text in Naskh-style fonts. See the [README](../README.md) for its exact contract.
+The browser supplies shaping. HarfBuzz safety flags, font bytes, OpenType features, variable-font axes, and style-selectable rule sets are not part of the current API. Bekesh intentionally targets Persian and classical Arabic text in Naskh-style fonts. See the [README](../README.md) for its exact contract.
 
 The output remains a **presentation artifact**, not canonical text. Literal tatweels affect search, comparison, copying, and indexing. Bekesh therefore preserves the clean source and reports inserted tatweels as reversible edits. ([University of Reading Research][15])
 

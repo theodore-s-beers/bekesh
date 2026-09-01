@@ -141,13 +141,21 @@ test("the DOM measurer reports its browser-only requirement", () => {
   assert.throws(() => measureDomText("متن", "20px serif"), /browser document/);
 });
 
-test("validates target width and font input", () => {
+test("validates options", () => {
   assert.throws(
     () => fitWithKashida({ text: "متن", targetWidth: -1, font: "20px serif" }, additiveMeasurer),
     RangeError,
   );
   assert.throws(
     () => fitWithKashida({ text: "متن", targetWidth: 30, font: " " }, additiveMeasurer),
+    TypeError,
+  );
+  assert.throws(
+    () =>
+      fitWithKashida(
+        { text: "متن", targetWidth: 30, font: "20px serif", lang: "ur" },
+        additiveMeasurer,
+      ),
     TypeError,
   );
 });

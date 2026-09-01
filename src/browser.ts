@@ -1,3 +1,9 @@
+import {
+  DEFAULT_LANGUAGE,
+  languageOrDefault,
+  validateOptions,
+  type ShapingLanguage,
+} from "./options.js";
 import { fitWithKashida } from "./solver.js";
 import type {
   JustificationDiagnostic,
@@ -9,24 +15,15 @@ import type {
 let measurementContext: CanvasRenderingContext2D | undefined;
 let measurementCanvas: HTMLCanvasElement | undefined;
 let measurementFont: string | undefined;
-let measurementLanguage: MeasurementLanguage | undefined;
+let measurementLanguage: ShapingLanguage | undefined;
 let domMeasurementNodes: { host: HTMLDivElement; element: HTMLSpanElement } | undefined;
 
-type MeasurementLanguage = NonNullable<JustifyOptions["lang"]>;
-
-const DEFAULT_LANGUAGE: MeasurementLanguage = "fa";
 const MAXIMUM_DOM_REFITS = 128;
 const REFIT_EPSILON = 1e-6;
 const WORD_SPACING_SEARCH_STEPS = 32;
 const WORD_SPACING_EPSILON = 1e-6;
 
-function languageOrDefault(lang: JustifyOptions["lang"]): MeasurementLanguage {
-  if (lang === undefined) return DEFAULT_LANGUAGE;
-  if (lang === "ar" || lang === "fa") return lang;
-  throw new TypeError('lang must be either "ar" or "fa"');
-}
-
-function canvasContext(language: MeasurementLanguage): CanvasRenderingContext2D {
+function canvasContext(language: ShapingLanguage): CanvasRenderingContext2D {
   if (typeof document === "undefined") {
     throw new Error("justifyWithKashida requires a browser document");
   }
@@ -57,7 +54,7 @@ function canvasContext(language: MeasurementLanguage): CanvasRenderingContext2D 
   return measurementContext;
 }
 
-function canvasTextMeasurer(language: MeasurementLanguage): TextMeasurer {
+function canvasTextMeasurer(language: ShapingLanguage): TextMeasurer {
   const context = canvasContext(language);
   return (text, font) => {
     if (measurementFont !== font) {
@@ -114,7 +111,7 @@ function measureDomTextWithWordSpacing(
   text: string,
   font: string,
   wordSpacing: number,
-  language: MeasurementLanguage,
+  language: ShapingLanguage,
 ): number {
   const element = domElement();
   if (element.lang !== language) {
@@ -145,7 +142,7 @@ function uniqueDiagnostics(
 function browserResult(
   result: JustificationResult,
   options: JustifyOptions,
-  language: MeasurementLanguage,
+  language: ShapingLanguage,
   sourceWidth: number,
   measuredWidth: number,
   domAdjusted: boolean,
@@ -218,10 +215,10 @@ function browserResult(
 }
 
 export async function justifyWithKashida(options: JustifyOptions): Promise<JustificationResult> {
+  const language = validateOptions(options);
   if (typeof document === "undefined") {
     throw new Error("justifyWithKashida requires a browser document");
   }
-  const language = languageOrDefault(options.lang);
   await document.fonts.load(options.font, `${options.text}\u0640`);
 
   const tolerance = options.tolerance ?? 0;
